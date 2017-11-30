@@ -2,7 +2,6 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import DataCell from './DataCell';
 import ComponentCell from './ComponentCell';
-import HeaderCell from './HeaderCell';
 
 const TAB_KEY           =  9;
 const ENTER_KEY         = 13;
@@ -15,6 +14,7 @@ const DELETE_KEY        = 46;
 const BACKSPACE_KEY     =  8;
 
 const isEmpty = (obj) => Object.keys(obj).length === 0;
+
 const range = (start, end) => {
   const array = [];
   const inc = (end - start > 0);
@@ -23,7 +23,9 @@ const range = (start, end) => {
   }
   return array;
 };
+
 const nullFtn = (obj) => {};
+
 const defaultParsePaste = (str) => {
   return str.split(/\r\n|\n|\r/)
     .map((row) => row.split('\t'));
@@ -33,17 +35,16 @@ export default class DataSheet extends PureComponent {
 
   constructor(props) {
     super(props);
-    this.onMouseDown        = this.onMouseDown.bind(this);
-    this.onMouseUp          = this.onMouseUp.bind(this);
-    this.onMouseOver        = this.onMouseOver.bind(this);
-    this.onDoubleClick      = this.onDoubleClick.bind(this);
-    this.onContextMenu      = this.onContextMenu.bind(this);
-    this.handleKey          = this.handleKey.bind(this);
-    this.handleCopy         = this.handleCopy.bind(this);
-    this.handlePaste        = this.handlePaste.bind(this);
-    this.handleTableScroll  = this.handleTableScroll.bind(this);
-    this.pageClick          = this.pageClick.bind(this);
-    this.onChange           = this.onChange.bind(this);
+    this.onMouseDown   = this.onMouseDown.bind(this);
+    this.onMouseUp     = this.onMouseUp.bind(this);
+    this.onMouseOver   = this.onMouseOver.bind(this);
+    this.onDoubleClick = this.onDoubleClick.bind(this);
+    this.onContextMenu = this.onContextMenu.bind(this);
+    this.handleKey     = this.handleKey.bind(this);
+    this.handleCopy    = this.handleCopy.bind(this);
+    this.handlePaste   = this.handlePaste.bind(this);
+    this.pageClick     = this.pageClick.bind(this);
+    this.onChange      = this.onChange.bind(this);
 
     this.defaultState = {
       start: {},
@@ -54,54 +55,9 @@ export default class DataSheet extends PureComponent {
       reverting: {},
       clear: {}
     };
-
-    // Grid sizes repository. Only in use when having header.
-    // The bloked prop will be true only when the sizes has been
-    // changed from outside (componentWillReceiveProps) to block
-    // changes perform by the onCellWidthChange. In that case those
-    // changes will be ignored because the component will be
-    // re-rendered again.
-    this.hasHeader = props.headerData && props.headerData.length > 0;
-    if (this.hasHeader) {
-      this.clearTimeoutIdForSizesUpdater = null;
-      this.sizes = {
-        cellWidths: this.defaultCellWidths(props.headerData, props.data),
-        bloqued: false
-      };
-
-      this.defaultState.headScrollLeft = 0; // Scrolling when having header
-      this.defaultState.cellWidths = this.sizes.cellWidths;
-      this.defaultState.isScrolling = false;
-    }
-
     this.state = this.defaultState;
+
     this.removeAllListeners = this.removeAllListeners.bind(this);
-  }
-
-  componentWillUnmount() {
-    this.removeAllListeners();
-
-    if (this.tbodyDom) {
-      this.tbodyDom.removeEventListener('scroll', this.handleTableScroll);
-    }
-  }
-
-  componentDidMount() {
-    if (this.hasHeader) {
-      this.tbodyDom.addEventListener('scroll', this.handleTableScroll);
-    }
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (this.hasHeader) {
-      const widths = this.updateCellWidthsFromProps(nextProps.headerData, nextProps.data);
-
-      if (widths.hasChanged) {
-        this.sizes.cellWidths = widths.cellWidths;
-        this.sizes.bloqued = true;
-        this.setState({ cellWidths: widths.cellWidths });
-      }
-    }
   }
 
   removeAllListeners() {
@@ -112,215 +68,8 @@ export default class DataSheet extends PureComponent {
     document.removeEventListener('paste',     this.handlePaste);
   }
 
-  /**
-   * Build cellWidths default state. It create a matrix (one for the header and another one
-   * for the body) with the  same structure of the data grid sheet, where the content of each
-   * `cell` will be its current width.
-   *
-   * It's only necesary when having header because it'll be fixed on scrolling then we've to
-   * separate the header of the table from the body with CSS so 0the table will render the
-   * cells with diferent widths. Even when the user sets the cell with in the data arrays
-   * there is the posibility of diferent width because of css styles, more content than
-   * expected, etc, causing it to create a datasheet that makes no sense then with this
-   * matrix where there is the updated with of each cell then we can make sure all columns
-   * have the same width. Note: The only important row of the header it's the last one, the
-   * other (if there is more than one)
-   *
-   * @param {array} headerData Data of the header.
-   * @param {array} bodyData Data of the body.
-   * @return {object} cellWidths default state.
-   */
-  defaultCellWidths(headerData, bodyData) {
-    const buildGrid = data => data.map(row => row.map(cell => cell.width || null));
-
-    return {
-      header: buildGrid(headerData),
-      body: buildGrid(bodyData)
-    };
-  }
-
-  /**
-   * Updates cell widths state when the component receive props.
-   *
-   * @param {array} headerData Data of the header.
-   * @param {array} bodyData Data of the body.
-   * @return {object} cellWidths updated state and if those has changed.
-   */
-  updateCellWidthsFromProps(headerData, bodyData) {
-    const cellWidths = Object.assign({}, this.state.cellWidths);
-
-    /*
-     * Agnostic function to update header / body cell widths if those
-     * has changed in the new props data.
-     *
-     * @param {array} widths Current cell widths array
-     * @param {Map} prevPropsWidths Map of the previous props cell widths
-     * @param {array} newData New props data
-     */
-    const updateWidths = (widths, prevPropsWidthsMap, newData) => {
-      let hasChanged = widths.length != newData.length;
-
-      newData.forEach((row, i) => {
-        if (widths[i] === undefined) {
-          hasChanged = true;
-          widths[i] = [];
-        } else if (widths[i].length !== row.length) {
-          hasChanged = true;
-        }
-
-        row.forEach((cell, j) => {
-          if (widths[i][j] === undefined) {
-            hasChanged = true;
-            widths[i][j] = null;
-          }
-
-          if (
-            cell.width && cell.width != prevPropsWidthsMap.get(i + '.' + j) &&
-            cell.width != widths[i][j]
-          ) {
-            hasChanged = true;
-            widths[i][j] = cell.width;
-          }
-        });
-      });
-
-      return { widths, hasChanged };
-    };
-
-    /*
-     * Agnostic function to update header / body cell widths if those
-     * has changed in the new props data.
-     *
-     * @param {bool} has If there is data (for header or body) in this nextProps
-     * @param {bool} had If there was previous data
-     * @param {array} widths Current cell widths array
-     * @param {Map} prevPropsWidthsMap Map of the previous props cell widths
-     */
-    const update = (has, had, widths, data, prevPropsWidthsMap) => {
-      if (has) {
-        return updateWidths(widths, prevPropsWidthsMap, data);
-      } else if (had) {
-        return {
-          widths: [],
-          hasChanged: true
-        };
-      }
-
-      return {
-        widths: widths,
-        hasChanged: false
-      };
-    }
-
-    const buildPrevPropsWidthsMap = prevPropsData => {
-      const map = new Map();
-
-      prevPropsData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.width) {
-            map.set(i + '.' + j, cell.width);
-          }
-        });
-      });
-
-      return map;
-    };
-
-    const hadHeader = cellWidths.header.length > 0;
-    const hasBody = bodyData.length > 0;
-    const hadBody = cellWidths.body.length > 0;
-    const upHeaderResult = update(
-      this.hasHeader,
-      hadHeader,
-      cellWidths.header,
-      headerData,
-      buildPrevPropsWidthsMap(this.props.headerData)
-    );
-    const upBodyResult = update(
-      hasBody,
-      hadBody,
-      cellWidths.body,
-      bodyData,
-      buildPrevPropsWidthsMap(this.props.data)
-    );
-
-    if (upHeaderResult.hasChanged || upBodyResult.hasChanged) {
-      return {
-        cellWidths: this.calculateCellWidths({
-          header: upHeaderResult.widths,
-          body: upBodyResult.widths
-        }),
-        hasChanged: true
-      };
-    }
-
-    return {
-      cellWidths,
-      hasChanged: false
-    }
-  }
-
-  /**
-   * Throttle function to update the cell widths state. This method will
-   * be called by the onCellWidthChange several times on rendering so to
-   * avoid useless state changes (and ineficient calculations) we have this
-   * function that only updates the state after all the update width calls.
-   * Also without this a infinite loop will happen because of how html tables
-   * calculate its cell width
-   *
-   * @return {void}
-   */
-  updateCellWidthsState() {
-    if (this.clearTimeoutIdForSizesUpdater === null) {
-      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
-        this.clearTimeoutIdForSizesUpdater = null;
-
-        if (!this.sizes.bloqued) {
-          this.sizes.bloqued = true;
-          this.sizes.cellWidths = this.calculateCellWidths(this.sizes.cellWidths);
-          this.setState({ cellWidths: this.sizes.cellWidths });
-        }
-      }, 40);
-    }
-  }
-
-  calculateCellWidths(cellWidths) {
-    const updatedCellWidths = Object.assign({}, this.sizes.cellWidths);
-    const headerMainRow = updatedCellWidths.header[updatedCellWidths.header.length - 1];
-    const bodyMainRow = updatedCellWidths.body[0];
-    const mainRow = headerMainRow.map(
-      (colWidth, j) => bodyMainRow[j] > colWidth ? bodyMainRow[j] : colWidth
-    );
-    updatedCellWidths.header[updatedCellWidths.header.length - 1] = mainRow;
-    updatedCellWidths.body = updatedCellWidths.body.map(row => mainRow);
-    return updatedCellWidths;
-  }
-
-  getHeight() {
-    const { size } = this.props;
-    return size && size.height && size.height > 400 ? size.height : 400;
-  }
-
-  getWidth() {
-    const { size } = this.props;
-    return size && size.width ? size.width : 700;
-  }
-
-  calculateTableWidth() {
-    return this.parseStyleSize(this.getWidth());
-  }
-
-  calculateTableHeight() {
-    return this.parseStyleSize(this.getHeight());
-  }
-
-  calculateBodyWidth() {
-    return this.parseStyleSize(this.getWidth());
-  }
-
-  calculateBodyHeight() {
-    const headerHeight = this.theadDom ? this.theadDom.getBoundingClientRect().height : 50;
-    return this.parseStyleSize(this.getHeight() - headerHeight);
+  componentWillUnmount() {
+    this.removeAllListeners();
   }
 
   pageClick(e) {
@@ -481,17 +230,6 @@ export default class DataSheet extends PureComponent {
     }
   }
 
-  handleTableScroll(e) {
-    // Setting the thead left to the inverse of tbody.scrollLeft will make it track the movement
-    // of the tbody element.
-    const headScrollLeft = -this.tbodyDom.scrollLeft;
-
-    // Setting the cells left value to the same as the tbody.scrollLeft makes it maintain
-    // it's relative position at the left of the table.
-    // console.log(e, this.tbodyDom.scrollLeft, this.tbodyDom.offsetWidth, this.tbodyDom);
-    this.setState({ headScrollLeft });
-  }
-
   onContextMenu(evt, i, j) {
     let cell = this.props.data[i][j];
     if (this.props.onContextMenu) {
@@ -536,222 +274,90 @@ export default class DataSheet extends PureComponent {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.sizes) {
-      this.sizes.bloqued = false; // Allow sizes change
-    }
-
     let prevEnd = prevState.end;
     if (!isEmpty(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
       this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j]);
     }
   }
 
-  shouldClear(i, j) {
-    return this.state.clear.i === i && this.state.clear.j === j;
-  }
+  render() {
+    const {dataRenderer, valueRenderer, className, overflow} = this.props;
 
-  isEditing(i, j) {
-    return this.state.editing.i === i && this.state.editing.j === j;
-  }
+    const isSelected = (i, j) => {
+      const start = this.state.start;
+      const end = this.state.end;
+      const posX = (j >= start.j && j <= end.j);
+      const negX = (j <= start.j && j >= end.j);
+      const posY = (i >= start.i && i <= end.i);
+      const negY = (i <= start.i && i >= end.i);
 
-  isReverting(i, j) {
-    return this.state.reverting.i === i && this.state.reverting.j === j;
-  }
+      return (posX && posY) ||
+        (negX && posY) ||
+        (negX && negY) ||
+        (posX && negY);
+    };
 
-  parseStyleSize(dimension) {
-    return typeof dimension === 'number' ? dimension + 'px' : dimension;
-  }
+    const isEditing = (i, j) => this.state.editing.i === i && this.state.editing.j === j;
+    const isReverting = (i, j) => this.state.reverting.i === i && this.state.reverting.j === j;
+    const shouldClear = (i, j) =>  this.state.clear.i === i && this.state.clear.j === j;
 
-  isSelected(i, j) {
-    const start = this.state.start;
-    const end = this.state.end;
-    const posX = (j >= start.j && j <= end.j);
-    const negX = (j <= start.j && j >= end.j);
-    const posY = (i >= start.i && i <= end.i);
-    const negY = (i <= start.i && i >= end.i);
-
-    return (posX && posY) ||
-      (negX && posY) ||
-      (negX && negY) ||
-      (posX && negY);
-  }
-
-  onCellWidthChange(row, col, width, isHeader) {
-    // When the sizes change from a props change then the function
-    // called to update the cellWidths state should not update it,
-    // it's because this cell width change may come from the previous
-    // render call. Then we wait until the component render with the
-    // new sizes and we can continue updating the sizes repository.
-    if (!this.sizes.bloqued) {
-      const key = isHeader ? 'header' : 'body';
-
-      if (width > this.sizes.cellWidths[key][row][col]) {
-        this.sizes.cellWidths[key][row][col] = width;
-        this.updateCellWidthsState(); // Throttle function, 70 ms
-      }
-    }
-  }
-
-  buildTableHeader(data) {
-    return this.hasHeader ? (
-      <thead ref={ ref => this.theadDom = ref } style={{ left: this.state.headScrollLeft }}>
-        { data.map((row, i) => this.buildHeaderRow(row, i)) }
-      </thead>
-    ) : null;
-  }
-
-  buildTableBody(data) {
-    const style = this.hasHeader ? {
-      width: this.calculateBodyWidth(),
-      height: this.calculateBodyHeight()
-    } : {};
-
-    return (
-      <tbody ref={ ref => this.tbodyDom = ref } style={ style }>
-        { data.map((row, i) => this.buildBodyRow(row, i)) }
-      </tbody>
-    );
-  }
-
-  buildHeaderRow(row, i) {
-    const { valueRenderer } = this.props;
-    const { cellWidths } = this.state;
-
-    return (
-      <tr key={ 'header-row-' + i }>
+    return <table ref={(r) => this.dgDom = r} className={['data-grid', className, overflow].filter(a => a).join(' ')}>
+      <tbody>
+      {this.props.data.map((row, i) =>
+        <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
         {
           row.map((cell, j) => {
-            const width = this.parseStyleSize(cellWidths.header[i][j]);
             const props = {
               key: cell.key ? cell.key : j,
               className: cell.className ? cell.className : '',
               row: i,
               col: j,
+              selected: isSelected(i, j),
+              onMouseDown:   cell.disableEvents ? nullFtn : this.onMouseDown,
+              onDoubleClick: cell.disableEvents ? nullFtn : this.onDoubleClick,
+              onMouseOver:   cell.disableEvents ? nullFtn : this.onMouseOver,
+              onContextMenu: cell.disableEvents ? nullFtn : this.onContextMenu,
+              editing: isEditing(i, j),
+              reverting: isReverting(i, j),
               colSpan: cell.colSpan,
-              rowSpan: cell.rowSpan,
-              readOnly: true,
-              width: width,
-              minWidth: width,
+              width: typeof cell.width === 'number' ? cell.width + 'px' : cell.width,
               overflow: cell.overflow,
-              value: valueRenderer(cell, i, j, true),
-              component: cell.component,
-              onWidthChange: (row, col, newWidth) => this.onCellWidthChange(row, col, newWidth, true)
-            };
-
-            return <HeaderCell {...props} />;
-          })
-        }
-      </tr>
-    );
-  }
-
-  buildBodyRow(row, i) {
-    const { dataRenderer, valueRenderer } = this.props;
-    const getCellWidth = this.hasHeader ?
-      (cell, row, col) => this.state.cellWidths.body[row][col]
-      :
-      cell => cell.width;
-
-    return (
-      <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
-        {
-          row.map((cell, j) => {
-            const width = this.parseStyleSize(getCellWidth(cell, i, j));
-            const props = {
-              key: cell.key ? cell.key : j,
-              className: cell.className ? cell.className : '',
-              row: i,
-              col: j,
-              selected: this.isSelected(i, j),
-              onMouseDown:   this.onMouseDown,
-              onDoubleClick: this.onDoubleClick,
-              onMouseOver:   this.onMouseOver,
-              onContextMenu: this.onContextMenu,
-              editing: this.isEditing(i, j),
-              reverting: this.isReverting(i, j),
-              colSpan: cell.colSpan,
-              width: width,
-              minWidth: width,
-              overflow: cell.overflow,
-              value: valueRenderer(cell, i, j, false),
+              value: valueRenderer(cell, i, j),
               extraAttributes: cell.extraAttributes
             };
 
-            if (this.hasHeader) {
-              props.onWidthChange = (row, col, newWidth) => this.onCellWidthChange(row, col, newWidth, false);
-            }
-
-            if (cell.disableEvents) {
-              props.onMouseDown = nullFtn;
-              props.onDoubleClick = nullFtn;
-              props.onMouseOver = nullFtn;
-              props.onContextMenu = nullFtn;
-            }
-
             if (cell.component) {
-              return (
-                <ComponentCell
-                  {...props}
-                  forceComponent={ cell.forceComponent || false }
-                  component={ cell.component }
-                />
-              );
+              return <ComponentCell
+                {...props}
+                forceComponent={cell.forceComponent || false}
+                component={cell.component}
+              />
             }
 
-            return (
-              <DataCell
-                {...props}
-                data     = { dataRenderer ? dataRenderer(cell, i, j) : null }
-                clear    = { this.shouldClear(i, j) }
-                rowSpan  = { cell.rowSpan }
-                onChange = { this.onChange }
-                readOnly = { cell.readOnly }
-              />
-            );
-          })
-        }
-      </tr>
-    );
-  }
-
-  render() {
-    const { className, overflow, data, headerData, size } = this.props;
-    const { isScrolling } = this.state;
-    const fullCN = [
-      'data-grid', className, overflow,
-      this.hasHeader && 'has-header',
-      isScrolling && 'scrolling-down'
-    ].filter(c => c).join(' ');
-
-    let style = {};
-    if (this.hasHeader) {
-      style = {
-        width: this.calculateTableWidth(),
-        height: this.calculateTableHeight()
-      };
-    }
-
-    return (
-      <table ref={ (r) => this.dgDom = r } className={ fullCN } style={ style }>
-        { this.buildTableHeader(headerData) }
-        { this.buildTableBody(data) }
-      </table>
-    );
+            return <DataCell
+              {...props}
+              data     = {dataRenderer ? dataRenderer(cell, i, j) : null}
+              clear    = {shouldClear(i, j)}
+              rowSpan  = {cell.rowSpan}
+              onChange = {this.onChange}
+              readOnly = {cell.readOnly}
+             />
+          }
+        )
+      }
+      </tr>)}
+      </tbody>
+    </table>;
   }
 }
 
 DataSheet.propTypes = {
   data: PropTypes.array.isRequired,
   className: PropTypes.string,
-  size: PropTypes.shape({
-    width: PropTypes.number,
-    height: PropTypes.number
-  }),
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   onChange: PropTypes.func,
   onContextMenu: PropTypes.func,
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
   parsePaste: PropTypes.func,
-  headerData: PropTypes.array
 };
