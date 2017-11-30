@@ -9,10 +9,6 @@ export default class DataCell extends PureComponent {
     this.clearTimeoutIdForSizesUpdater = null;
   }
 
-  componentDidMount() {
-    this.checkWidth();
-  }
-
   componentWillUpdate(nextProps) {
     if (nextProps.value !== this.props.value) {
       this.setState({updated: true});
@@ -21,8 +17,6 @@ export default class DataCell extends PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    this.checkWidth();
-
     if (prevProps.editing === true && this.props.editing === false && this.props.reverting === false) {
       this.onChange(this._input.value);
     }
@@ -41,23 +35,6 @@ export default class DataCell extends PureComponent {
     clearTimeout(this.timeout);
   }
 
-  checkWidth() {
-    const { onWidthChange } = this.props;
-
-    if (onWidthChange && this.clearTimeoutIdForSizesUpdater === null) {
-      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
-        this.clearTimeoutIdForSizesUpdater = null;
-
-        const { width, row, col } = this.props;
-        const bcr = this.cellDomNode.getBoundingClientRect();
-
-        if (width != bcr.width + 'px') {
-          onWidthChange(row, col, bcr.width);
-        }
-      }, 5);
-    }
-  }
-
   onChange(value) {
     const initialData = this.props.data === null ? this.props.value : this.props.data;
     (value === '' || initialData !== value) && this.props.onChange(this.props.row, this.props.col, value);
@@ -67,14 +44,10 @@ export default class DataCell extends PureComponent {
     const {
       row, col, rowSpan, readOnly, colSpan, width, overflow,
       value, className, editing, selected, onMouseDown, onMouseOver,
-      onDoubleClick, onContextMenu, minWidth, extraAttributes
+      onDoubleClick, onContextMenu, extraAttributes
     } = this.props;
     const style = { width };
     const filteredExtraAttribs = filterCellExtraAttributes(extraAttributes);
-
-    if (minWidth) {
-      style.minWidth = minWidth;
-    }
 
     return (
       <td
@@ -111,7 +84,6 @@ DataCell.propTypes = {
   colSpan: PropTypes.number,
   rowSpan: PropTypes.number,
   width: PropTypes.string,
-  minWidth: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   selected: PropTypes.bool.isRequired,
   editing: PropTypes.bool.isRequired,
@@ -120,6 +92,5 @@ DataCell.propTypes = {
   onMouseOver: PropTypes.func.isRequired,
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
-  extraAttributes: PropTypes.object,
-  onWidthChange: PropTypes.func
+  extraAttributes: PropTypes.object
 };

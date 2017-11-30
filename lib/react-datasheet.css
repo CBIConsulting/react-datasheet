@@ -2,7 +2,6 @@
 table.data-grid {
   table-layout: fixed;
   border-collapse: collapse;
-
 }
 
 table.data-grid td.cell.updated,
@@ -109,6 +108,12 @@ table.data-grid.nowrap th.cell.clip {
 }
 
 /* Fixed header */
+.data-grid-wrapper {
+  overflow: auto;
+  border: 1px solid #ccc;
+  border-collapse: collapse;
+}
+/*
 table.data-grid.has-header {
   position: relative;
   width: 100%;
@@ -119,22 +124,22 @@ table.data-grid.has-header {
 
 table.data-grid.has-header thead {
   position: relative;
-  display: block; /* seperates the header from the body allowing it to be positioned */
+  display: block; /* seperates the header from the body allowing it to be positioned
   width: 100%;
   overflow: visible;
 }
 
 table.data-grid.has-header thead tr {
   position: relative;
-}
+} */
 
 table.data-grid.has-header.scrolling-down thead tr:last-child {
   box-shadow: 0px 1px 4px 2px #ddd;
 }
-
+/*
 table.data-grid.has-header tbody {
   position: relative;
-  display: block; /*separates the tbody from the header*/
+  display: block; /*separates the tbody from the header
   overflow: auto;
   overflow: overlay;
 }
@@ -143,7 +148,7 @@ table.data-grid.has-header td.cell,
 table.data-grid.has-header th.cell {
   position: relative;
 }
-
+*/
 table.data-grid.has-header,
 table.data-grid.has-header td.cell,
 table.data-grid.has-header th.cell,

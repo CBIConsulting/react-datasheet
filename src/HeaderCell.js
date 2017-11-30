@@ -7,34 +7,9 @@ class HeaderCell extends PureComponent {
     this.clearTimeoutIdForSizesUpdater = null;
   }
 
-  componentDidMount() {
-    this.checkWidth();
-  }
-
-  componentDidUpdate() {
-    this.checkWidth();
-  }
-
-  checkWidth() {
-    const { onWidthChange } = this.props;
-
-    if (onWidthChange && this.clearTimeoutIdForSizesUpdater === null) {
-      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
-        this.clearTimeoutIdForSizesUpdater = null;
-
-        const { width, row, col } = this.props;
-        const bcr = this.cellDomNode.getBoundingClientRect();
-
-        if (width != bcr.width + 'px') {
-          onWidthChange(row, col, bcr.width);
-        }
-      }, 5);
-    }
-  }
-
   render() {
     const {
-      row, col, rowSpan, colSpan, width, minWidth,
+      row, col, rowSpan, colSpan, width,
       overflow, className, value, component
     } = this.props;
     const style = { width };
@@ -42,10 +17,6 @@ class HeaderCell extends PureComponent {
       className, 'header-cell', 'cell',
       'read-only', overflow
     ].filter(a => a).join(' ');
-
-    if (minWidth) {
-      style.minWidth = minWidth;
-    }
 
     return (
       <th
@@ -75,11 +46,9 @@ HeaderCell.propTypes = {
   colSpan: PropTypes.number,
   rowSpan: PropTypes.number,
   width: PropTypes.string,
-  minWidth: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   className: PropTypes.string,
-  component: PropTypes.element,
-  onWidthChange: PropTypes.func
+  component: PropTypes.element
 };
 
 export default HeaderCell;
