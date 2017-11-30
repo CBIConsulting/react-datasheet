@@ -263,9 +263,8 @@ export default class DataSheet extends PureComponent {
   }
 
   onContextMenu(evt, i, j) {
-    let cell = this.props.data[i][j];
-    if (this.props.onContextMenu) {
-      this.props.onContextMenu(evt, cell, i, j);
+    if (onContextMenu) {
+      onContextMenu(evt, data[i][j], i, j);
     }
   }
 
@@ -312,34 +311,8 @@ export default class DataSheet extends PureComponent {
     }
   }
 
-  shouldClear(i, j) {
-    return this.state.clear.i === i && this.state.clear.j === j;
-  }
-
-  isEditing(i, j) {
-    return this.state.editing.i === i && this.state.editing.j === j;
-  }
-
-  isReverting(i, j) {
-    return this.state.reverting.i === i && this.state.reverting.j === j;
-  }
-
   parseStyleSize(dimension) {
     return typeof dimension === 'number' ? dimension + 'px' : dimension;
-  }
-
-  isSelected(i, j) {
-    const start = this.state.start;
-    const end = this.state.end;
-    const posX = (j >= start.j && j <= end.j);
-    const negX = (j <= start.j && j >= end.j);
-    const posY = (i >= start.i && i <= end.i);
-    const negY = (i <= start.i && i >= end.i);
-
-    return (posX && posY) ||
-      (negX && posY) ||
-      (negX && negY) ||
-      (posX && negY);
   }
 
   buildTableHeader(data) {
