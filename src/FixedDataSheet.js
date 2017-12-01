@@ -263,6 +263,8 @@ export default class DataSheet extends PureComponent {
   }
 
   onContextMenu(evt, i, j) {
+    const { onContextMenu } = this.props;
+
     if (onContextMenu) {
       onContextMenu(evt, data[i][j], i, j);
     }
