@@ -33,9 +33,6 @@ export const range = (start, end) => {
   return array;
 };
 export const nullFunction = obj => {};
-export const parsePaste = (str) => {
-  return str.split(/\r\n|\n|\r/).map(row => row.split('\t'));
-}
 export const cellStateComparison = (state, i, j) => state.i === i && state.j === j;
 export const isCellSelected = (start, end, i, j) => {
   const posX = (j >= start.j && j <= end.j);

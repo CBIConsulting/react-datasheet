@@ -1,4 +1,12 @@
-/* Handle Key */
+import { isEmptyObj } from './utils';
+import {
+  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
+  UP_KEY, RIGHT_KEY, DOWN_KEY,
+  DELETE_KEY, BACKSPACE_KEY,
+  ENTER_KEY
+} from './constanct';
+
+// Private functions
 const handleKeyboardCellMovement = (start, forceEdit, isEditing, data, e) => {
   const currentCell = data[start.i][start.j];
   let newLocation = null;
@@ -21,7 +29,7 @@ const handleKeyboardCellMovement = (start, forceEdit, isEditing, data, e) => {
       newLocation = {i: start.i + 1, j: start.j}
     }
   }
-
+  console.log(e.keyCode, newLocation);
   return newLocation;
 }
 
@@ -41,12 +49,20 @@ const getSelectedCells = (data, start, end, readOnly = true) => {
   return selected;
 }
 
-export const handleKey = (start, end, forceEdit, editing, data, e) => {
+const parsePaste = (str) => {
+  return str.split(/\r\n|\n|\r/).map(row => row.split('\t'));
+}
+
+/* Handle Key */
+export const handleKeyLogic = (e, props, state) => {
+  const { start, end, editing, forceEdit } = state;
+  const { data } = props;
   const noCellsSelected = isEmptyObj(start);
   const ctrlKeyPressed = e.ctrlKey || e.metaKey;
   const buildReturn = (newState = false, cleanCells = false) => ({ newState, cleanCells });
 
   if (!noCellsSelected && !ctrlKeyPressed) {
+    const isEditing = !isEmptyObj(editing);
     const newLocation = handleKeyboardCellMovement(start, forceEdit, isEditing, data, e);
 
     if (newLocation) {
@@ -75,7 +91,6 @@ export const handleKey = (start, end, forceEdit, editing, data, e) => {
         109, /* decimal point */
         110
       ].indexOf(e.keyCode) > -1;
-      const isEditing = !isEmptyObj(editing);
 
       if (deleteKeysPressed && !isEditing) {
         e.preventDefault();
@@ -107,9 +122,64 @@ export const handleKey = (start, end, forceEdit, editing, data, e) => {
 
   return buildReturn();
 }
+/*
+ function handleKey(e) {
+    const {start, end, editing} = this.state;
+    const data = this.props.data;
+    const isEditing = !isEmpty(editing);
+    const noCellsSelected = isEmpty(start);
+    const ctrlKeyPressed = e.ctrlKey || e.metaKey;
+    const deleteKeysPressed = (e.keyCode === DELETE_KEY || e.keyCode === BACKSPACE_KEY);
+    const enterKeyPressed = e.keyCode === ENTER_KEY;
+    const escapeKeyPressed = e.keyCode === ESCAPE_KEY;
+    const numbersPressed = (e.keyCode >= 48 && e.keyCode <= 57);
+    const lettersPressed = (e.keyCode >= 65 && e.keyCode <= 90);
+    const numPadKeysPressed = (e.keyCode >= 96 && e.keyCode <= 105);
+    const cell = data[start.i][start.j];
+    const equationKeysPressed = [
+      187,
+      110
+    ].indexOf(e.keyCode) > -1;
+
+    if (noCellsSelected || ctrlKeyPressed || this.handleKeyboardCellMovement(e)) {
+      return true;
+    }
+
+
+    if (deleteKeysPressed && !isEditing) {
+      this.getSelectedCells(data, start, end).map(({cell, i, j}) =>
+        (!cell.readOnly) ? this.onChange(i, j, '') : null
+      );
+      e.preventDefault();
+    } else if (enterKeyPressed && isEditing) {
+      this.setState({editing: {}, reverting: {}});
+    } else if (escapeKeyPressed && isEditing) {
+      this.setState({editing: {}, reverting: editing});
+    } else if (enterKeyPressed && !isEditing  && !cell.readOnly) {
+      this.setState({editing: start, clear: {}, reverting: {}, forceEdit: true});
+    } else if (numbersPressed
+      || numPadKeysPressed
+      || lettersPressed
+      || equationKeysPressed
+      || enterKeyPressed
+    ) {
+      //empty out cell if user starts typing without pressing enter
+      if (!isEditing && !cell.readOnly) {
+        this.setState({
+          editing: start,
+          clear: start,
+          reverting: {},
+          forceEdit: false
+        });
+      }
+    }
+  }*/
+
 
 // Handle copy and paste
-export const copy = (data, dataRenderer, valueRenderer, start, end, e) => {
+export const handleCopyLogic = (e, props, state) => {
+  const { dataRenderer, valueRenderer, data } = props;
+  const { start, end } = state;
   e.preventDefault();
 
   return range(start.i, end.i).map(i =>
@@ -126,26 +196,30 @@ export const copy = (data, dataRenderer, valueRenderer, start, end, e) => {
   ).join('\n');
 }
 
-export const paste = (newStringData, data, startI, startJ, parser) => {
-  const parsedData = (parser || parsePaste)(newStringData);
+export const handlePasteLogic = (e, props, state) => {
+  const { data, onPaste } = props;
+  const start = state.start;
+  const parse = props.parsePaste || parsePaste;
   const changedCells = [];
   let end = {};
 
-  const pastedMap = parsedData.map((row, i) => {
-    return row.map((pastedData, j) => {
-      const cell = data[startI + i] && data[startI + i][startJ + j];
+  const pastedDataMap = parse(e.clipboardData.getData('text/plain')).map(
+    (row, i) => row.map(
+      (cellData, j) => {
+        const cell = data[start.i + i] && data[start.i + i][start.j + j];
 
-      if (cell && !cell.readOnly) {
-        changedCells.push({i: startI + i, j: startJ + j, value: pastedData});
-        end = {i: start.i + i, j: start.j + j};
+        if (cell && !cell.readOnly && !onPaste) {
+          changedCells.push({i: start.i + i, j: start.j + j, value: cellData});
+          end = {i: start.i + i, j: start.j + j};
+        }
+
+        return {cell: cell, data: cellData};
       }
-
-      return {cell: cell, data: pastedData};
-    });
-  });
+    )
+  );
 
   return {
-    pastedData: pastedMap,
+    pastedData: pastedDataMap,
     end: end,
     changedCells
   }

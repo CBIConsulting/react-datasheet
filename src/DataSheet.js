@@ -4,21 +4,26 @@ import DataCell from './DataCell';
 import ComponentCell from './ComponentCell';
 
 // Utils
-import { handleKey, copy, paste } from './utils/dataSheet';
+import {
+  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
+  UP_KEY, RIGHT_KEY, DOWN_KEY,
+  DELETE_KEY, BACKSPACE_KEY,
+  ENTER_KEY
+} from './utils/constanct';
+
+import {
+  handleKeyLogic,
+  handleCopyLogic,
+  handlePasteLogic
+} from './utils/dataSheet';
+
 import {
   isEmptyObj,
   range,
   nullFunction,
-  parsePaste,
   cellStateComparison,
   isCellSelected
 } from './utils/utils';
-
-import {
-  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
-  UP_KEY, RIGHT_KEY, DOWN_KEY,
-  DELETE_KEY, BACKSPACE_KEY
-} from './utils/constanct';
 
 export default class DataSheet extends PureComponent {
 
@@ -70,61 +75,42 @@ export default class DataSheet extends PureComponent {
 
   handleCopy(e) {
     if (isEmptyObj(this.state.editing)) {
-      e.preventDefault();
-      const {dataRenderer, valueRenderer, data} = this.props;
-      const {start, end} = this.state;
-
-
-      const text = range(start.i, end.i).map((i) =>
-        range(start.j, end.j).map(j => {
-          const cell = data[i][j];
-          const value = dataRenderer ? dataRenderer(cell, i, j) : null;
-          if (value === '' || value === null || typeof(value) === 'undefined') {
-            return valueRenderer(cell, i, j);
-          }
-          return value;
-        }).join('\t')
-      ).join('\n');
-      e.clipboardData.setData('text/plain', text);
+      e.clipboardData.setData('text/plain', handleCopyLogic(e, this.props, this.state));
     }
   }
 
   handlePaste(e) {
     if (isEmptyObj(this.state.editing)) {
-      const start = this.state.start;
-      const parse = this.props.parsePaste || parsePaste;
-      const data = this.props.data;
-      const { pastedData, end, changedCells } = paste(e.clipboardData.getData('text/plain'), data, start.i, start.j, parse)
+      const { onChange, onPaste } = this.props;
+      const { pastedData, end, changedCells } = handlePasteLogic(e, this.props, this.state);
 
-      if (this.props.onPaste) {
-        this.props.onPaste(pastedData)
+      if (onPaste) {
+        onPaste(pastedData);
+        this.setState({end: end});
       } else {
-        changedCells.forEach(c => onChange(c.cell, c.i, c.j, c.value));
+        this.setState({end: end, editing: {}}, () => {
+          changedCells.forEach(c => onChange(c.cell, c.i, c.j, c.value))
+        });
       }
-
-      this.setState({end: end, editing: {}});
     }
   }
 
   handleKey(e) {
-    const { start, end, editing, forceEdit } = this.state;
-    const { data, onChange } = this.props;
-    const { newState, changedCells } = handleKey(start, end, forceEdit, editing, data, e);
+    const { onChange } = this.props;
+    const { newState, changedCells } = handleKeyLogic(e, this.props, this.state);
 
     if (changedCells) {
-      changedCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
-
-      if (newState && !newState.editing) {
-        newState.editing = {};
-      }
-    }
-
-    if (newState) {
+      this.setState({editing: {}}, () => {
+        changedCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
+      });
+    } else if (newState) {
       this.setState(newState);
     }
   }
 
   onContextMenu(evt, i, j) {
+    const { onContextMenu } = this.props;
+
     if (onContextMenu) {
       onContextMenu(evt, data[i][j], i, j);
     }
@@ -202,7 +188,7 @@ export default class DataSheet extends PureComponent {
               extraAttributes: cell.extraAttributes
             };
 
-            if (!cell.disableEvents) {
+            if (cell.disableEvents) {
               props.onMouseDown   = nullFunction;
               props.onDoubleClick = nullFunction;
               props.onMouseOver   = nullFunction;
