@@ -1,4 +1,4 @@
-import { isEmptyObj } from './utils';
+import { isEmptyObj, range } from './utils';
 import {
   TAB_KEY, ESCAPE_KEY, LEFT_KEY,
   UP_KEY, RIGHT_KEY, DOWN_KEY,
@@ -29,7 +29,7 @@ const handleKeyboardCellMovement = (start, forceEdit, isEditing, data, e) => {
       newLocation = {i: start.i + 1, j: start.j}
     }
   }
-  console.log(e.keyCode, newLocation);
+
   return newLocation;
 }
 
@@ -209,7 +209,7 @@ export const handlePasteLogic = (e, props, state) => {
         const cell = data[start.i + i] && data[start.i + i][start.j + j];
 
         if (cell && !cell.readOnly && !onPaste) {
-          changedCells.push({i: start.i + i, j: start.j + j, value: cellData});
+          changedCells.push({cell, i: start.i + i, j: start.j + j, value: cellData});
           end = {i: start.i + i, j: start.j + j};
         }
 
