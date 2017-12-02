@@ -97,11 +97,11 @@ export default class DataSheet extends PureComponent {
 
   handleKey(e) {
     const { onChange } = this.props;
-    const { newState, changedCells } = handleKeyLogic(e, this.props, this.state);
+    const { newState, cleanCells } = handleKeyLogic(e, this.props, this.state);
 
-    if (changedCells) {
+    if (cleanCells) {
       this.setState({editing: {}}, () => {
-        changedCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
+        cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
       });
     } else if (newState) {
       this.setState(newState);
@@ -109,7 +109,7 @@ export default class DataSheet extends PureComponent {
   }
 
   onContextMenu(evt, i, j) {
-    const { onContextMenu } = this.props;
+    const { onContextMenu, data } = this.props;
 
     if (onContextMenu) {
       onContextMenu(evt, data[i][j], i, j);
@@ -160,7 +160,7 @@ export default class DataSheet extends PureComponent {
   }
 
   render() {
-    const { dataRenderer, valueRenderer, className, overflow } = this.props;
+    const { dataRenderer, valueRenderer, attributesRenderer, className, overflow } = this.props;
     const { reverting, editing, clear, start, end } = this.state;
 
     return <table ref={(r) => this.dgDom = r} className={['data-grid', className, overflow].filter(a => a).join(' ')}>
@@ -185,7 +185,7 @@ export default class DataSheet extends PureComponent {
               width: typeof cell.width === 'number' ? cell.width + 'px' : cell.width,
               overflow: cell.overflow,
               value: valueRenderer(cell, i, j),
-              extraAttributes: cell.extraAttributes
+              attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {}
             };
 
             if (cell.disableEvents) {
@@ -229,4 +229,5 @@ DataSheet.propTypes = {
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
   parsePaste: PropTypes.func,
+  attributesRenderer: PropTypes.func
 };

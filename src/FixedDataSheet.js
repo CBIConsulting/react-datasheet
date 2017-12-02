@@ -4,30 +4,27 @@ import DataCell from './DataCell';
 import ComponentCell from './ComponentCell';
 import HeaderCell from './HeaderCell';
 
-const TAB_KEY           =  9;
-const ENTER_KEY         = 13;
-const ESCAPE_KEY        = 27;
-const LEFT_KEY          = 37;
-const UP_KEY            = 38;
-const RIGHT_KEY         = 39;
-const DOWN_KEY          = 40;
-const DELETE_KEY        = 46;
-const BACKSPACE_KEY     =  8;
+// Utils
+import {
+  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
+  UP_KEY, RIGHT_KEY, DOWN_KEY,
+  DELETE_KEY, BACKSPACE_KEY,
+  ENTER_KEY
+} from './utils/constanct';
 
-const isEmpty = (obj) => Object.keys(obj).length === 0;
-const range = (start, end) => {
-  const array = [];
-  const inc = (end - start > 0);
-  for (let i = start; inc ? (i <= end) : (i >= end); inc ? i++ : i--) {
-    inc ? array.push(i) : array.unshift(i)
-  }
-  return array;
-};
-const nullFtn = (obj) => {};
-const defaultParsePaste = (str) => {
-  return str.split(/\r\n|\n|\r/)
-    .map((row) => row.split('\t'));
-}
+import {
+  handleKeyLogic,
+  handleCopyLogic,
+  handlePasteLogic
+} from './utils/dataSheet';
+
+import {
+  isEmptyObj,
+  range,
+  nullFunction,
+  cellStateComparison,
+  isCellSelected
+} from './utils/utils';
 
 export default class DataSheet extends PureComponent {
 
@@ -73,14 +70,10 @@ export default class DataSheet extends PureComponent {
 
   componentWillUnmount() {
     this.removeAllListeners();
-
-    if (this.hasHeader && this.tbodyDom) {
-      this.tbodyDom.removeEventListener('scroll', this.handleTableScroll);
-    }
   }
 
   componentDidMount() {
-    if (this.hasHeader && this.tbodyDom) {
+    if (this.tbodyDom) {
       this.tbodyDom.addEventListener('scroll', this.handleTableScroll);
     }
   }
@@ -91,6 +84,10 @@ export default class DataSheet extends PureComponent {
     document.removeEventListener('mouseup',   this.onMouseUp);
     document.removeEventListener('copy',      this.handleCopy);
     document.removeEventListener('paste',     this.handlePaste);
+
+    if (this.tbodyDom) {
+      this.tbodyDom.removeEventListener('scroll', this.handleTableScroll);
+    }
   }
 
   pageClick(e) {
@@ -101,153 +98,37 @@ export default class DataSheet extends PureComponent {
   }
 
   handleCopy(e) {
-    if (isEmpty(this.state.editing)) {
-      e.preventDefault();
-      const {dataRenderer, valueRenderer, data} = this.props;
-      const {start, end} = this.state;
-
-
-      const text = range(start.i, end.i).map((i) =>
-        range(start.j, end.j).map(j => {
-          const cell = data[i][j];
-          const value = dataRenderer ? dataRenderer(cell, i, j) : null;
-          if (value === '' || value === null || typeof(value) === 'undefined') {
-            return valueRenderer(cell, i, j);
-          }
-          return value;
-        }).join('\t')
-      ).join('\n');
-      e.clipboardData.setData('text/plain', text);
+    if (isEmptyObj(this.state.editing)) {
+      e.clipboardData.setData('text/plain', handleCopyLogic(e, this.props, this.state));
     }
   }
 
   handlePaste(e) {
-    if (isEmpty(this.state.editing)) {
-      const start = this.state.start;
+    if (isEmptyObj(this.state.editing)) {
+      const { onChange, onPaste } = this.props;
+      const { pastedData, end, changedCells } = handlePasteLogic(e, this.props, this.state);
 
-      const parse = this.props.parsePaste || defaultParsePaste;
-      const pastedMap = [];
-      const pasteData = parse(e.clipboardData.getData('text/plain'));
-
-      let end = {};
-
-      pasteData.map((row, i) => {
-        const rowData = [];
-        row.map((pastedData, j) => {
-          const cell = this.props.data[start.i + i] && this.props.data[start.i + i][start.j + j];
-          rowData.push({cell: cell, data: pastedData});
-          if (cell && !cell.readOnly && !this.props.onPaste) {
-            this.onChange(start.i + i, start.j + j, pastedData);
-            end = {i: start.i + i, j: start.j + j};
-          }
-
+      if (onPaste) {
+        onPaste(pastedData);
+        this.setState({end: end});
+      } else {
+        this.setState({end: end, editing: {}}, () => {
+          changedCells.forEach(c => onChange(c.cell, c.i, c.j, c.value))
         });
-        pastedMap.push(rowData);
-      });
-      this.props.onPaste && this.props.onPaste(pastedMap);
-      this.setState({end: end});
+      }
     }
-  }
-
-  handleKeyboardCellMovement(e) {
-    const {start, editing} = this.state;
-    const {data} = this.props;
-    const currentCell = data[start.i][start.j];
-    let newLocation = null;
-
-    if (
-      (this.state.forceEdit || currentCell.component !== undefined)
-      && !isEmpty(this.state.editing)
-      && e.keyCode !== TAB_KEY
-    ) {
-      return false;
-    } else if (e.keyCode === TAB_KEY && !e.shiftKey) {
-      newLocation = {i : start.i, j: start.j + 1};
-      newLocation = typeof(data[newLocation.i][newLocation.j]) !== 'undefined' ? newLocation : { i : start.i + 1, j: 0}
-    } else if (e.keyCode === RIGHT_KEY) {
-      newLocation = {i: start.i, j: start.j + 1}
-    } else if (e.keyCode === LEFT_KEY || e.keyCode === TAB_KEY && e.shiftKey) {
-      newLocation = {i : start.i, j: start.j - 1}
-    } else if (e.keyCode === UP_KEY) {
-      newLocation = {i: start.i - 1, j: start.j}
-    } else if (e.keyCode === DOWN_KEY) {
-      newLocation = {i: start.i + 1, j: start.j}
-    }
-
-
-    if (newLocation && data[newLocation.i] && typeof(data[newLocation.i][newLocation.j]) !== 'undefined') {
-      this.setState({start: newLocation, end: newLocation, editing: {}});
-    }
-    if (newLocation) {
-      e.preventDefault();
-      return true;
-    }
-    return false;
-  }
-
-  getSelectedCells(data, start, end) {
-    let selected = [];
-    range(start.i, end.i).map(i => {
-      range(start.j, end.j).map(j => {
-        selected.push({cell: data[i][j], i, j});
-      })
-    });
-    return selected;
   }
 
   handleKey(e) {
-    const {start, end, editing} = this.state;
-    const data = this.props.data;
-    const isEditing = !isEmpty(editing);
-    const noCellsSelected = isEmpty(start);
-    const ctrlKeyPressed = e.ctrlKey || e.metaKey;
-    const deleteKeysPressed = (e.keyCode === DELETE_KEY || e.keyCode === BACKSPACE_KEY);
-    const enterKeyPressed = e.keyCode === ENTER_KEY;
-    const escapeKeyPressed = e.keyCode === ESCAPE_KEY;
-    const numbersPressed = (e.keyCode >= 48 && e.keyCode <= 57);
-    const lettersPressed = (e.keyCode >= 65 && e.keyCode <= 90);
-    const numPadKeysPressed = (e.keyCode >= 96 && e.keyCode <= 105);
-    const cell = data[start.i][start.j];
-    const equationKeysPressed = [
-      187, /* equal */
-      189, /* substract */
-      190, /* period */
-      107, /* add */
-      109, /* decimal point */
-      110
-    ].indexOf(e.keyCode) > -1;
+    const { onChange } = this.props;
+    const { newState, cleanCells } = handleKeyLogic(e, this.props, this.state);
 
-    if (noCellsSelected || ctrlKeyPressed || this.handleKeyboardCellMovement(e)) {
-      return true;
-    }
-
-
-    if (deleteKeysPressed && !isEditing) {
-      this.getSelectedCells(data, start, end).map(({cell, i, j}) =>
-        (!cell.readOnly) ? this.onChange(i, j, '') : null
-      );
-      e.preventDefault();
-    } else if (enterKeyPressed && isEditing) {
-      this.setState({editing: {}, reverting: {}});
-    } else if (escapeKeyPressed && isEditing) {
-      this.setState({editing: {}, reverting: editing});
-    } else if (enterKeyPressed && !isEditing  && !cell.readOnly) {
-      this.setState({editing: start, clear: {}, reverting: {}, forceEdit: true});
-    } else if (numbersPressed
-      || numPadKeysPressed
-      || lettersPressed
-      || equationKeysPressed
-      || enterKeyPressed
-    ) {
-      //empty out cell if user starts typing without pressing enter
-      if (!isEditing && !cell.readOnly) {
-        this.setState({
-          editing: start,
-          clear: start,
-          reverting: {},
-          forceEdit: false
-        });
-      }
+    if (cleanCells) {
+      this.setState({editing: {}}, () => {
+        cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
+      });
+    } else if (newState) {
+      this.setState(newState);
     }
   }
 
@@ -263,7 +144,7 @@ export default class DataSheet extends PureComponent {
   }
 
   onContextMenu(evt, i, j) {
-    const { onContextMenu } = this.props;
+    const { onContextMenu, data } = this.props;
 
     if (onContextMenu) {
       onContextMenu(evt, data[i][j], i, j);
@@ -445,12 +326,12 @@ export default class DataSheet extends PureComponent {
 
 DataSheet.propTypes = {
   data: PropTypes.array.isRequired,
+  headerData: PropTypes.array.isRequired,
   className: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   onChange: PropTypes.func,
   onContextMenu: PropTypes.func,
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
-  parsePaste: PropTypes.func,
-  headerData: PropTypes.array
+  parsePaste: PropTypes.func
 };

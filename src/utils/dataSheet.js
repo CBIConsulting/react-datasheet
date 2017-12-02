@@ -40,7 +40,7 @@ const getSelectedCells = (data, start, end, readOnly = true) => {
     range(start.j, end.j).forEach(j => {
       const cell = data[i][j];
 
-      if (readOnly || !data[i][j].readOnly) {
+      if (readOnly || !cell.readOnly) {
         selected.push({cell, i, j});
       }
     })

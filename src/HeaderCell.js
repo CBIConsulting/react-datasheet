@@ -7,10 +7,43 @@ class HeaderCell extends PureComponent {
     this.clearTimeoutIdForSizesUpdater = null;
   }
 
+  componentDidMount() {
+    this.checkWidth();
+  }
+
+  componentDidUpdate(prevProps) {
+    this.checkWidth();
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this.timeout);
+
+    if (this.clearTimeoutIdForSizesUpdater) {
+      clearTimeout(this.clearTimeoutIdForSizesUpdater);
+    }
+  }
+
+  checkWidth() {
+    const { onWidthChange } = this.props;
+
+    if (onWidthChange && this.clearTimeoutIdForSizesUpdater === null) {
+      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
+        this.clearTimeoutIdForSizesUpdater = null;
+
+        const { width, row, col } = this.props;
+        const bcr = this.cellDomNode.getBoundingClientRect();
+
+        if (width != bcr.width + 'px') {
+          onWidthChange(row, col, bcr.width);
+        }
+      }, 5);
+    }
+  }
   render() {
     const {
       row, col, rowSpan, colSpan, width,
-      overflow, className, value, component
+      overflow, className, value, component,
+      attributes
     } = this.props;
     const style = { width };
     const fullCN = [
@@ -25,6 +58,7 @@ class HeaderCell extends PureComponent {
         colSpan={ colSpan || 1 }
         rowSpan={ rowSpan || 1 }
         style={ style }
+        { ...attributes }
       >
         {
           component ?
@@ -48,7 +82,9 @@ HeaderCell.propTypes = {
   width: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   className: PropTypes.string,
-  component: PropTypes.element
+  component: PropTypes.element,
+  attributes: PropTypes.object,
+  onWidthChange: PropTypes.func
 };
 
 export default HeaderCell;

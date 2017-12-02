@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types';
-import { filterCellExtraAttributes } from './utils/utils';
 
 export default class ComponentCell extends PureComponent {
   constructor(props) {
@@ -28,6 +27,10 @@ export default class ComponentCell extends PureComponent {
 
   componentWillUnmount() {
     clearTimeout(this.timeout);
+
+    if (this.clearTimeoutIdForSizesUpdater) {
+      clearTimeout(this.clearTimeoutIdForSizesUpdater);
+    }
   }
 
   checkWidth() {
@@ -48,14 +51,12 @@ export default class ComponentCell extends PureComponent {
   }
 
   render() {
-    const {
-      row, col, readOnly, forceComponent, rowSpan, colSpan, width,
-      overflow, value, className, editing, selected, onMouseDown,
-      onMouseOver, onDoubleClick, onContextMenu, minWidth,
-      extraAttributes
+    let {
+      row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
+      value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick,
+      onContextMenu, attributes, minWidth
     } = this.props;
     const style = { width };
-    const filteredExtraAttribs = filterCellExtraAttributes(extraAttributes);
 
     if (minWidth) {
       style.minWidth = minWidth;
@@ -75,7 +76,7 @@ export default class ComponentCell extends PureComponent {
         onContextMenu={(e) => onContextMenu(e, row, col)} colSpan={colSpan || 1}
         rowSpan={rowSpan || 1}
         style={style}
-        { ...filteredExtraAttribs }
+        { ...attributes }
       >
         { ((editing && !readOnly) || forceComponent) ? this.props.component : value }
       </td>
@@ -100,6 +101,6 @@ ComponentCell.propTypes = {
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
   forceComponent: PropTypes.bool,
-  extraAttributes: PropTypes.object,
+  attributes: PropTypes.object,
   onWidthChange: PropTypes.func
 };
