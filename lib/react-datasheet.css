@@ -109,10 +109,29 @@ table.data-grid.nowrap th.cell.clip {
 
 /* Fixed header */
 .data-grid-wrapper {
+  position: relative;
   overflow: auto;
   border: 1px solid #ccc;
   border-collapse: collapse;
 }
+
+.data-grid-wrapper table.data-grid.dtg-virtual-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.data-grid-wrapper table.data-grid.dtg-main {
+  position: absolute;
+  z-index: 1;
+}
+
+.data-grid-wrapper table.dtg-virtual-header thead tr:last-child {
+  box-shadow: 0px 1px 4px 2px #ddd;
+}
+
 /*
 table.data-grid.has-header {
   position: relative;
@@ -131,12 +150,8 @@ table.data-grid.has-header thead {
 
 table.data-grid.has-header thead tr {
   position: relative;
-} */
-
-table.data-grid.has-header.scrolling-down thead tr:last-child {
-  box-shadow: 0px 1px 4px 2px #ddd;
 }
-/*
+
 table.data-grid.has-header tbody {
   position: relative;
   display: block; /*separates the tbody from the header

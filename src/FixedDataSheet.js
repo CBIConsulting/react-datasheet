@@ -26,7 +26,7 @@ import {
   isCellSelected
 } from './utils/utils';
 
-export default class DataSheet extends PureComponent {
+export default class FixedDataSheet extends PureComponent {
 
   constructor(props) {
     super(props);
@@ -49,20 +49,10 @@ export default class DataSheet extends PureComponent {
       forceEdit: false,
       editing: {},
       reverting: {},
-      clear: {}
+      clear: {},
+      scrollLeft: 0,
+      scrollTop: 0
     };
-
-    // Grid sizes repository. Only in use when having header.
-    // The bloked prop will be true only when the sizes has been
-    // changed from outside (componentWillReceiveProps) to block
-    // changes perform by the onCellWidthChange. In that case those
-    // changes will be ignored because the component will be
-    // re-rendered again.
-    this.hasHeader = props.headerData && props.headerData.length > 0;
-    if (this.hasHeader) {
-      this.defaultState.headScrollLeft = 0; // Scrolling when having header
-      this.defaultState.isScrolling = false;
-    }
 
     this.state = this.defaultState;
     this.removeAllListeners = this.removeAllListeners.bind(this);
@@ -73,9 +63,7 @@ export default class DataSheet extends PureComponent {
   }
 
   componentDidMount() {
-    if (this.tbodyDom) {
-      this.tbodyDom.addEventListener('scroll', this.handleTableScroll);
-    }
+    this.dgDom.addEventListener('scroll', this.handleTableScroll);
   }
 
   removeAllListeners() {
@@ -84,10 +72,7 @@ export default class DataSheet extends PureComponent {
     document.removeEventListener('mouseup',   this.onMouseUp);
     document.removeEventListener('copy',      this.handleCopy);
     document.removeEventListener('paste',     this.handlePaste);
-
-    if (this.tbodyDom) {
-      this.tbodyDom.removeEventListener('scroll', this.handleTableScroll);
-    }
+    this.dgDom.removeEventListener('scroll', this.handleTableScroll);
   }
 
   pageClick(e) {
@@ -133,14 +118,15 @@ export default class DataSheet extends PureComponent {
   }
 
   handleTableScroll(e) {
-    // Setting the thead left to the inverse of tbody.scrollLeft will make it track the movement
-    // of the tbody element.
-    const headScrollLeft = -this.tbodyDom.scrollLeft;
+    // Setting the thead left to the inverse of table.scrollLeft will make it track the movement
+    // of the table element.
+    const scrollLeft = -this.dgDom.scrollLeft;
+    const scrollTop = this.dgDom.scrollTop;
+    console.log(this.dgDom.scrollTop)
 
-    // Setting the cells left value to the same as the tbody.scrollLeft makes it maintain
+    // Setting the cells left value to the same as the table.scrollLeft makes it maintain
     // it's relative position at the left of the table.
-    // console.log(e, this.tbodyDom.scrollLeft, this.tbodyDom.offsetWidth, this.tbodyDom);
-    this.setState({ headScrollLeft });
+    this.setState({ scrollLeft, scrollTop });
   }
 
   onContextMenu(evt, i, j) {
@@ -157,7 +143,7 @@ export default class DataSheet extends PureComponent {
   }
 
   onMouseDown(i, j) {
-    let editing = (isEmpty(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
+    let editing = (isEmptyObj(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
       ? {} : this.state.editing;
     this.setState({selecting: true, start:{i, j}, end:{i, j}, editing: editing, forceEdit: false});
 
@@ -174,7 +160,7 @@ export default class DataSheet extends PureComponent {
   }
 
   onMouseOver(i, j) {
-    (this.state.selecting && isEmpty(this.state.editing)) ? this.setState({end: {i, j}}) : null;
+    (this.state.selecting && isEmptyObj(this.state.editing)) ? this.setState({end: {i, j}}) : null;
   }
 
   onMouseUp() {
@@ -189,7 +175,7 @@ export default class DataSheet extends PureComponent {
 
   componentDidUpdate(prevProps, prevState) {
     let prevEnd = prevState.end;
-    if (!isEmpty(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
+    if (!isEmptyObj(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
       this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j]);
     }
   }
@@ -199,52 +185,52 @@ export default class DataSheet extends PureComponent {
   }
 
   buildTableHeader(data) {
-    return this.hasHeader ? (
-      <thead ref={ ref => this.theadDom = ref } style={{ left: this.state.headScrollLeft }}>
+    return (
+      <thead>
         { data.map((row, i) => this.buildHeaderRow(row, i)) }
       </thead>
-    ) : null;
+    );
   }
 
   buildTableBody(data) {
     return (
-      <tbody ref={ ref => this.tbodyDom = ref }>
+      <tbody>
         { data.map((row, i) => this.buildBodyRow(row, i)) }
       </tbody>
     );
   }
 
   buildHeaderRow(row, i) {
-    const { valueRenderer } = this.props;
+    const { valueRenderer, attributesRenderer } = this.props;
     const { cellWidths } = this.state;
 
     return (
       <tr key={ 'header-row-' + i }>
         {
-          row.map((cell, j) => {
-            const props = {
-              key: cell.key ? cell.key : j,
-              className: cell.className ? cell.className : '',
-              row: i,
-              col: j,
-              colSpan: cell.colSpan,
-              rowSpan: cell.rowSpan,
-              readOnly: true,
-              width: this.parseStyleSize(cell.width),
-              overflow: cell.overflow,
-              value: valueRenderer(cell, i, j, true),
-              component: cell.component
-            };
-
-            return <HeaderCell {...props} />;
-          })
+          row.map((cell, j) => (
+            <HeaderCell
+              key={ cell.key ? cell.key : j }
+              className={ cell.className ? cell.className : ''}
+              row={ i }
+              col={ j }
+              colSpan={ cell.colSpan }
+              rowSpan={ cell.rowSpan }
+              readOnly={ true }
+              width={ this.parseStyleSize(cell.width) }
+              overflow={ cell.overflow }
+              value={ valueRenderer(cell, i, j, true) }
+              component={ cell.component }
+              attributes={ attributesRenderer ? attributesRenderer(cell, i, j, true) : {} }
+            />
+          ))
         }
       </tr>
     );
   }
 
   buildBodyRow(row, i) {
-    const { dataRenderer, valueRenderer } = this.props;
+    const { dataRenderer, valueRenderer, attributesRenderer } = this.props;
+    const { reverting, editing, clear, start, end } = this.state;
 
     return (
       <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
@@ -255,25 +241,25 @@ export default class DataSheet extends PureComponent {
               className: cell.className ? cell.className : '',
               row: i,
               col: j,
-              selected: this.isSelected(i, j),
+              selected: isCellSelected(start, end, i, j),
               onMouseDown:   this.onMouseDown,
               onDoubleClick: this.onDoubleClick,
               onMouseOver:   this.onMouseOver,
               onContextMenu: this.onContextMenu,
-              editing: this.isEditing(i, j),
-              reverting: this.isReverting(i, j),
+              editing: cellStateComparison(editing, i, j),
+              reverting: cellStateComparison(reverting, i, j),
               colSpan: cell.colSpan,
               width: this.parseStyleSize(cell.width),
               overflow: cell.overflow,
               value: valueRenderer(cell, i, j, false),
-              extraAttributes: cell.extraAttributes
+              attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {}
             };
 
             if (cell.disableEvents) {
-              props.onMouseDown = nullFtn;
-              props.onDoubleClick = nullFtn;
-              props.onMouseOver = nullFtn;
-              props.onContextMenu = nullFtn;
+              props.onMouseDown = nullFunction;
+              props.onDoubleClick = nullFunction;
+              props.onMouseOver = nullFunction;
+              props.onContextMenu = nullFunction;
             }
 
             if (cell.component) {
@@ -290,7 +276,7 @@ export default class DataSheet extends PureComponent {
               <DataCell
                 {...props}
                 data     = { dataRenderer ? dataRenderer(cell, i, j) : null }
-                clear    = { this.shouldClear(i, j) }
+                clear    = { cellStateComparison(clear, i, j) }
                 rowSpan  = { cell.rowSpan }
                 onChange = { this.onChange }
                 readOnly = { cell.readOnly }
@@ -303,35 +289,45 @@ export default class DataSheet extends PureComponent {
   }
 
   render() {
-    const { className, overflow, data, headerData, size } = this.props;
-    const { isScrolling } = this.state;
-    const fullCN = [
-      'data-grid', className, overflow,
-      this.hasHeader && 'has-header',
-      isScrolling && 'scrolling-down'
-    ].filter(c => c).join(' ');
+    const { className, overflow, data, headerData, size, width, height } = this.props;
+    const { isScrolling, scrollLeft, scrollTop } = this.state;
+    const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ');
+    const style = {
+      width: this.parseStyleSize(width),
+      height: this.parseStyleSize(height)
+    };
+    const header = this.buildTableHeader(headerData);
+    const body = this.buildTableBody(data)
 
     return (
-      <div className={ 'data-grid-wrapper' } style={{width: this.parseStyleSize(800), height: this.parseStyleSize(400)}}>
-        <table className={ 'dtg-virtual-header' }>
+      <div ref={ r => this.dgDom = r } className={ 'data-grid-wrapper fixed' } style={ style }>
+        <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop, left: scrollLeft }}>
+          { header }
         </table>
-        <table ref={ (r) => this.dgDom = r } className={ fullCN }>
-          { this.buildTableHeader(headerData) }
-          { this.buildTableBody(data) }
+        <table className={ 'dtg-main ' + fullCN }>
+          { header }
+          { body }
         </table>
       </div>
     );
   }
 }
 
-DataSheet.propTypes = {
+FixedDataSheet.propTypes = {
   data: PropTypes.array.isRequired,
   headerData: PropTypes.array.isRequired,
+  width: PropTypes.string,
+  height: PropTypes.string,
   className: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
-  onChange: PropTypes.func,
+  onChange: PropTypes.func.isRequired,
   onContextMenu: PropTypes.func,
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
   parsePaste: PropTypes.func
 };
+
+FixedDataSheet.defaultProps = {
+  width: '800px',
+  height: '400px'
+}

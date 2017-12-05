@@ -5,11 +5,6 @@ export default class DataCell extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {updated: false}
-    this.clearTimeoutIdForSizesUpdater = null;
-  }
-
-  componentDidMount() {
-    this.checkWidth();
   }
 
   componentWillUpdate(nextProps) {
@@ -20,8 +15,6 @@ export default class DataCell extends PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    this.checkWidth();
-
     if (prevProps.editing === true && this.props.editing === false && this.props.reverting === false) {
       this.onChange(this._input.value);
     }
@@ -38,27 +31,6 @@ export default class DataCell extends PureComponent {
 
   componentWillUnmount() {
     clearTimeout(this.timeout);
-
-    if (this.clearTimeoutIdForSizesUpdater) {
-      clearTimeout(this.clearTimeoutIdForSizesUpdater);
-    }
-  }
-
-  checkWidth() {
-    const { onWidthChange } = this.props;
-
-    if (onWidthChange && this.clearTimeoutIdForSizesUpdater === null) {
-      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
-        this.clearTimeoutIdForSizesUpdater = null;
-
-        const { width, row, col } = this.props;
-        const bcr = this.cellDomNode.getBoundingClientRect();
-
-        if (width != bcr.width + 'px') {
-          onWidthChange(row, col, bcr.width);
-        }
-      }, 5);
-    }
   }
 
   onChange(value) {
@@ -117,6 +89,5 @@ DataCell.propTypes = {
   onMouseOver: PropTypes.func.isRequired,
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
-  attributes: PropTypes.object,
-  onWidthChange: PropTypes.func
+  attributes: PropTypes.object
 };

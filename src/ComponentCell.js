@@ -5,11 +5,6 @@ export default class ComponentCell extends PureComponent {
   constructor(props) {
     super(props);
     this.state = { updated: false };
-    this.clearTimeoutIdForSizesUpdater = null;
-  }
-
-  componentDidMount() {
-    this.checkWidth();
   }
 
   componentWillUpdate(nextProps) {
@@ -21,46 +16,17 @@ export default class ComponentCell extends PureComponent {
     }
   }
 
-  componentDidUpdate() {
-    this.checkWidth();
-  }
-
   componentWillUnmount() {
     clearTimeout(this.timeout);
-
-    if (this.clearTimeoutIdForSizesUpdater) {
-      clearTimeout(this.clearTimeoutIdForSizesUpdater);
-    }
-  }
-
-  checkWidth() {
-    const { onWidthChange } = this.props;
-
-    if (onWidthChange && this.clearTimeoutIdForSizesUpdater === null) {
-      this.clearTimeoutIdForSizesUpdater = setTimeout(() => {
-        this.clearTimeoutIdForSizesUpdater = null;
-
-        const { width, row, col } = this.props;
-        const bcr = this.cellDomNode.getBoundingClientRect();
-
-        if (width != bcr.width + 'px') {
-          onWidthChange(row, col, bcr.width);
-        }
-      }, 5);
-    }
   }
 
   render() {
     let {
       row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
       value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick,
-      onContextMenu, attributes, minWidth
+      onContextMenu, attributes, component
     } = this.props;
     const style = { width };
-
-    if (minWidth) {
-      style.minWidth = minWidth;
-    }
 
     return (
       <td
@@ -78,7 +44,7 @@ export default class ComponentCell extends PureComponent {
         style={style}
         { ...attributes }
       >
-        { ((editing && !readOnly) || forceComponent) ? this.props.component : value }
+        { ((editing && !readOnly) || forceComponent) ? component : value }
       </td>
     );
   }
@@ -90,7 +56,6 @@ ComponentCell.propTypes = {
   colSpan: PropTypes.number,
   rowSpan: PropTypes.number,
   width: PropTypes.string,
-  minWidth: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   className: PropTypes.string,
   selected: PropTypes.bool.isRequired,
@@ -101,6 +66,5 @@ ComponentCell.propTypes = {
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
   forceComponent: PropTypes.bool,
-  attributes: PropTypes.object,
-  onWidthChange: PropTypes.func
+  attributes: PropTypes.object
 };
