@@ -50,7 +50,6 @@ export default class FixedDataSheet extends PureComponent {
       editing: {},
       reverting: {},
       clear: {},
-      scrollLeft: 0,
       scrollTop: 0
     };
 
@@ -120,13 +119,11 @@ export default class FixedDataSheet extends PureComponent {
   handleTableScroll(e) {
     // Setting the thead left to the inverse of table.scrollLeft will make it track the movement
     // of the table element.
-    const scrollLeft = -this.dgDom.scrollLeft;
     const scrollTop = this.dgDom.scrollTop;
-    console.log(this.dgDom.scrollTop)
 
     // Setting the cells left value to the same as the table.scrollLeft makes it maintain
     // it's relative position at the left of the table.
-    this.setState({ scrollLeft, scrollTop });
+    this.setState({ scrollTop });
   }
 
   onContextMenu(evt, i, j) {
@@ -289,8 +286,8 @@ export default class FixedDataSheet extends PureComponent {
   }
 
   render() {
-    const { className, overflow, data, headerData, size, width, height } = this.props;
-    const { isScrolling, scrollLeft, scrollTop } = this.state;
+    const { className, overflow, data, headerData, width, height } = this.props;
+    const { isScrolling, scrollTop } = this.state;
     const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ');
     const style = {
       width: this.parseStyleSize(width),
@@ -301,7 +298,7 @@ export default class FixedDataSheet extends PureComponent {
 
     return (
       <div ref={ r => this.dgDom = r } className={ 'data-grid-wrapper fixed' } style={ style }>
-        <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop, left: scrollLeft }}>
+        <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop }}>
           { header }
         </table>
         <table className={ 'dtg-main ' + fullCN }>
@@ -316,8 +313,8 @@ export default class FixedDataSheet extends PureComponent {
 FixedDataSheet.propTypes = {
   data: PropTypes.array.isRequired,
   headerData: PropTypes.array.isRequired,
-  width: PropTypes.string,
-  height: PropTypes.string,
+  width: PropTypes.string.isRequired,
+  height: PropTypes.string.isRequired,
   className: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
   onChange: PropTypes.func.isRequired,
