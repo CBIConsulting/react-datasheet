@@ -43,12 +43,12 @@ class HeaderCell extends PureComponent {
     const {
       row, col, rowSpan, colSpan, width,
       overflow, className, value, component,
-      attributes
+      attributes, fixed, left
     } = this.props;
-    const style = { width };
+    const style = { width, left };
     const fullCN = [
       className, 'header-cell', 'cell',
-      'read-only', overflow
+      'read-only', overflow, fixed && 'fixed-column'
     ].filter(a => a).join(' ');
 
     return (
@@ -84,6 +84,8 @@ HeaderCell.propTypes = {
   className: PropTypes.string,
   component: PropTypes.element,
   attributes: PropTypes.object,
+  fixed: PropTypes.bool,
+  left: PropTypes.string,
   onWidthChange: PropTypes.func
 };
 

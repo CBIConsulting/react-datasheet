@@ -50,7 +50,8 @@ export default class FixedDataSheet extends PureComponent {
       editing: {},
       reverting: {},
       clear: {},
-      scrollTop: 0
+      scrollTop: 0,
+      scrollLeft: 0
     };
 
     this.state = this.defaultState;
@@ -116,14 +117,19 @@ export default class FixedDataSheet extends PureComponent {
     }
   }
 
+  /**
+   * Handle table scroll event. Setting the left position (of the fixed columns) at the same
+   * as the main container DOM scrollLeft will make it track the horizontal movement. The
+   * same happens for the top to simulate the fixed header.
+   * 
+   * @param {Event} e Event info object
+   * @returns {void}
+   */
   handleTableScroll(e) {
-    // Setting the thead left to the inverse of table.scrollLeft will make it track the movement
-    // of the table element.
-    const scrollTop = this.dgDom.scrollTop;
-
-    // Setting the cells left value to the same as the table.scrollLeft makes it maintain
-    // it's relative position at the left of the table.
-    this.setState({ scrollTop });
+    this.setState({
+      scrollTop: this.dgDom.scrollTop,
+      scrollLeft: this.dgDom.scrollLeft
+    });
   }
 
   onContextMenu(evt, i, j) {
@@ -199,10 +205,11 @@ export default class FixedDataSheet extends PureComponent {
 
   buildHeaderRow(row, i) {
     const { valueRenderer, attributesRenderer } = this.props;
-    const { cellWidths } = this.state;
+    const { scrollLeft } = this.state;
+    const key = 'header-row-' + i;
 
     return (
-      <tr key={ 'header-row-' + i }>
+      <tr key={ this.props.keyFn ? this.props.keyFn(key) : key }>
         {
           row.map((cell, j) => (
             <HeaderCell
@@ -218,6 +225,8 @@ export default class FixedDataSheet extends PureComponent {
               value={ valueRenderer(cell, i, j, true) }
               component={ cell.component }
               attributes={ attributesRenderer ? attributesRenderer(cell, i, j, true) : {} }
+              fixed={ cell.fixed }
+              left={ cell.fixed ? this.parseStyleSize(scrollLeft) : null }
             />
           ))
         }
@@ -227,7 +236,7 @@ export default class FixedDataSheet extends PureComponent {
 
   buildBodyRow(row, i) {
     const { dataRenderer, valueRenderer, attributesRenderer } = this.props;
-    const { reverting, editing, clear, start, end } = this.state;
+    const { reverting, editing, clear, start, end, scrollLeft } = this.state;
 
     return (
       <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
@@ -249,7 +258,9 @@ export default class FixedDataSheet extends PureComponent {
               width: this.parseStyleSize(cell.width),
               overflow: cell.overflow,
               value: valueRenderer(cell, i, j, false),
-              attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {}
+              attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {},
+              fixed: cell.fixed,
+              left: cell.fixed ? this.parseStyleSize(scrollLeft) : null
             };
 
             if (cell.disableEvents) {
@@ -287,7 +298,7 @@ export default class FixedDataSheet extends PureComponent {
 
   render() {
     const { className, overflow, data, headerData, width, height } = this.props;
-    const { isScrolling, scrollTop } = this.state;
+    const { isScrolling, scrollTop, scrollLeft } = this.state;
     const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ');
     const style = {
       width: this.parseStyleSize(width),
@@ -295,7 +306,7 @@ export default class FixedDataSheet extends PureComponent {
     };
     const header = this.buildTableHeader(headerData);
     const body = this.buildTableBody(data)
-
+    console.log(scrollLeft);
     return (
       <div ref={ r => this.dgDom = r } className={ 'data-grid-wrapper fixed' } style={ style }>
         <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop }}>
