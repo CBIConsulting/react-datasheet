@@ -71,7 +71,7 @@ export default class FixedDataSheet extends PureComponent {
     document.removeEventListener('mouseup',   this.onMouseUp);
     document.removeEventListener('copy',      this.handleCopy);
     document.removeEventListener('paste',     this.handlePaste);
-    this.dgDom.removeEventListener('scroll', this.handleTableScroll);
+    this.dgDom.removeEventListener('scroll',  this.handleTableScroll);
   }
 
   pageClick(e) {
