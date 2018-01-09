@@ -26,19 +26,18 @@ import {
 } from './utils/utils';
 
 export default class DataSheet extends PureComponent {
-
-  constructor(props) {
-    super(props);
-    this.onMouseDown   = this.onMouseDown.bind(this);
-    this.onMouseUp     = this.onMouseUp.bind(this);
-    this.onMouseOver   = this.onMouseOver.bind(this);
-    this.onDoubleClick = this.onDoubleClick.bind(this);
-    this.onContextMenu = this.onContextMenu.bind(this);
-    this.handleKey     = this.handleKey.bind(this);
-    this.handleCopy    = this.handleCopy.bind(this);
-    this.handlePaste   = this.handlePaste.bind(this);
-    this.pageClick     = this.pageClick.bind(this);
-    this.onChange      = this.onChange.bind(this);
+  constructor (props) {
+    super(props)
+    this.onMouseDown = this.onMouseDown.bind(this)
+    this.onMouseUp = this.onMouseUp.bind(this)
+    this.onMouseOver = this.onMouseOver.bind(this)
+    this.onDoubleClick = this.onDoubleClick.bind(this)
+    this.onContextMenu = this.onContextMenu.bind(this)
+    this.handleKey = this.handleKey.bind(this)
+    this.handleCopy = this.handleCopy.bind(this)
+    this.handlePaste = this.handlePaste.bind(this)
+    this.pageClick = this.pageClick.bind(this)
+    this.onChange = this.onChange.bind(this)
 
     this.defaultState = {
       start: {},
@@ -48,28 +47,28 @@ export default class DataSheet extends PureComponent {
       editing: {},
       reverting: {},
       clear: {}
-    };
-    this.state = this.defaultState;
+    }
+    this.state = this.defaultState
 
-    this.removeAllListeners = this.removeAllListeners.bind(this);
+    this.removeAllListeners = this.removeAllListeners.bind(this)
   }
 
-  removeAllListeners() {
-    document.removeEventListener('keydown',   this.handleKey);
-    document.removeEventListener('mousedown', this.pageClick);
-    document.removeEventListener('mouseup',   this.onMouseUp);
-    document.removeEventListener('copy',      this.handleCopy);
-    document.removeEventListener('paste',     this.handlePaste);
+  removeAllListeners () {
+    document.removeEventListener('keydown', this.handleKey)
+    document.removeEventListener('mousedown', this.pageClick)
+    document.removeEventListener('mouseup', this.onMouseUp)
+    document.removeEventListener('copy', this.handleCopy)
+    document.removeEventListener('paste', this.handlePaste)
   }
 
-  componentWillUnmount() {
-    this.removeAllListeners();
+  componentWillUnmount () {
+    this.removeAllListeners()
   }
 
-  pageClick(e) {
+  pageClick (e) {
     if (!this.dgDom.contains(e.target)) {
-      this.setState(this.defaultState);
-      this.removeAllListeners();
+      this.setState(this.defaultState)
+      this.removeAllListeners()
     }
   }
 
@@ -139,17 +138,16 @@ export default class DataSheet extends PureComponent {
   }
 
   onMouseOver(i, j) {
-    (this.state.selecting && isEmptyObj(this.state.editing)) ? this.setState({end: {i, j}}) : null;
   }
 
-  onMouseUp() {
-    this.setState({selecting: false});
-    document.removeEventListener('mouseup', this.onMouseUp);
+  onMouseUp () {
+    this.setState({selecting: false})
+    document.removeEventListener('mouseup', this.onMouseUp)
   }
 
-  onChange(i, j, val) {
-    this.props.onChange(this.props.data[i][j], i, j, val);
-    this.setState({editing: {}});
+  onChange (i, j, val) {
+    this.props.onChange(this.props.data[i][j], i, j, val)
+    this.setState({editing: {}})
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -236,4 +234,4 @@ DataSheet.propTypes = {
   dataRenderer: PropTypes.func,
   parsePaste: PropTypes.func,
   attributesRenderer: PropTypes.func
-};
+}

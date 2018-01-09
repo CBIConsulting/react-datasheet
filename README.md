@@ -1,7 +1,8 @@
-
+[![JavaScript Style Guide](https://cdn.rawgit.com/standard/standard/master/badge.svg)](https://github.com/standard/standard)
 [![Build Status](https://travis-ci.org/nadbm/react-datasheet.svg?branch=master)](https://travis-ci.org/nadbm/react-datasheet)
 [![Coverage Status](https://coveralls.io/repos/github/nadbm/react-datasheet/badge.svg)](https://coveralls.io/github/nadbm/react-datasheet)
 [![Issue Count](https://codeclimate.com/github/nadbm/react-datasheet/badges/issue_count.svg)](https://codeclimate.com/github/nadbm/react-datasheet)
+[![npm version](https://badge.fury.io/js/react-datasheet.svg)](https://badge.fury.io/js/react-datasheet)
 # React-Datasheet
 A simple react component to create a spreadsheet. Adding new feature, fixed header and columns on scroll.
 
@@ -100,7 +101,7 @@ const grid = [
    [{
     value:  5,
       component: (
-        <button onClick={() => console.log("clicked")}}>
+        <button onClick={() => console.log("clicked")}>
           Rendered
         </button>
       )
