@@ -144,6 +144,11 @@ table.data-grid.nowrap th.cell.clip {
   border-left: none;
 }
 
+.data-grid-wrapper table.data-grid td.cell.selected,
+.data-grid-wrapper table.data-grid th.cell.selected {
+  border: 1px double rgb(33, 133, 208);
+}
+
 .data-grid-wrapper table.data-grid thead tr th.fixed-column,
 .data-grid-wrapper table.data-grid tbody tr td.fixed-column {
   position: relative;
