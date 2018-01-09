@@ -1,13 +1,13 @@
 
 table.data-grid {
   table-layout: fixed;
-  border-collapse: separate;
+  border-collapse: collapse;
 }
 
 table.data-grid td.cell.updated,
 table.data-grid th.cell.updated {
-    background-color: rgba(0, 145, 253, 0.16);
-    transition : background-color 0ms ease ;
+  background-color: rgba(0, 145, 253, 0.16);
+  transition : background-color 0ms ease ;
 }
 table.data-grid td.cell,
 table.data-grid th.cell {
@@ -22,8 +22,6 @@ table.data-grid th.cell {
   vertical-align: middle;
   text-align: right;
   border: 1px solid #DDD;
-  border-top: none;
-  border-left: none;
   padding: 0;
 }
 table.data-grid td.cell.selected,
@@ -134,6 +132,16 @@ table.data-grid.nowrap th.cell.clip {
 
 .data-grid-wrapper table.dtg-virtual-header.scrolling-down thead tr:last-child {
   box-shadow: 0px 1px 4px 2px #ddd;
+}
+
+.data-grid-wrapper table.data-grid {
+  border-collapse: separate;
+}
+
+.data-grid-wrapper table.data-grid td.cell,
+.data-grid-wrapper table.data-grid th.cell {
+  border-top: none;
+  border-left: none;
 }
 
 .data-grid-wrapper table.data-grid thead tr th.fixed-column,
