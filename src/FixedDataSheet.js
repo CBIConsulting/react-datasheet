@@ -306,7 +306,7 @@ export default class FixedDataSheet extends PureComponent {
     };
     const header = this.buildTableHeader(headerData);
     const body = this.buildTableBody(data)
-    console.log(scrollLeft);
+
     return (
       <div ref={ r => this.dgDom = r } className={ 'data-grid-wrapper fixed' } style={ style }>
         <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop }}>
