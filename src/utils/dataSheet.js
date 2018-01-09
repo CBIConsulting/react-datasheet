@@ -1,10 +1,10 @@
 import { isEmptyObj, range, isUndefined } from './utils';
 import {
-  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
-  UP_KEY, RIGHT_KEY, DOWN_KEY,
-  DELETE_KEY, BACKSPACE_KEY,
-  ENTER_KEY
-} from './constanct';
+  enterKeyPressed, deleteKeyPressed, escapeKeyPressed,
+  numbersPressed, lettersPressed, numPadKeysPressed,
+  equationKeysPressed, tabKeyPressed, rightKeyPressed,
+  leftKeyPressed, downKeyPressed, upKeyPressed
+} from './keyboard';
 
 // Shared logic management methods for the datasheets
 
@@ -50,37 +50,33 @@ export const handleKeyLogic = (e, props, state) => {
     }
     
     const cell = data[start.i][start.j];
-    const deleteKeysPressed = (e.keyCode === DELETE_KEY || e.keyCode === BACKSPACE_KEY);
-    const enterKeyPressed = e.keyCode === ENTER_KEY;
-    const escapeKeyPressed = e.keyCode === ESCAPE_KEY;
-    const numbersPressed = (e.keyCode >= 48 && e.keyCode <= 57);
-    const lettersPressed = (e.keyCode >= 65 && e.keyCode <= 90);
-    const numPadKeysPressed = (e.keyCode >= 96 && e.keyCode <= 105);
-    const equationKeysPressed = [
-      187, /* equal */
-      189, /* substract */
-      190, /* period */
-      107, /* add */
-      109, /* decimal point */
-      110
-    ].indexOf(e.keyCode) > -1;
+    const keyCode = e.keyCode;
+    const enterKPressed = enterKeyPressed(keyCode);
 
-    if (deleteKeysPressed && !isEditing) {
+    if (deleteKeyPressed(keyCode) && !isEditing) {
       e.preventDefault();
       return buildReturn(false, getSelectedCells(data, start, end, false));
-    } else if (enterKeyPressed && isEditing) {
-      return buildReturn({editing: {}, reverting: {}});
-    } else if (escapeKeyPressed && isEditing) {
+    } else if (enterKPressed && isEditing) {
+      let newLocation = start;
+
+      // Go to next row once the edit is done
+      if (data[start.i + 1] && data[start.i + 1][start.j]) {
+        newLocation = {i: start.i + 1, j: start.j}
+      }
+
+      return buildReturn({editing: {}, reverting: {}, start: newLocation, end: newLocation});
+    } else if (escapeKeyPressed(keyCode) && isEditing) {
       return buildReturn({editing: {}, reverting: editing });
-    } else if (enterKeyPressed && !isEditing  && !cell.readOnly) {
+    } else if (enterKPressed && !isEditing  && !cell.readOnly) {
       return buildReturn({editing: start, clear: {}, reverting: {}, forceEdit: true});
-    } else if (numbersPressed
-      || numPadKeysPressed
-      || lettersPressed
-      || equationKeysPressed
-      || enterKeyPressed
+    } else if (
+      enterKPressed ||
+      numbersPressed(keyCode) ||
+      numPadKeysPressed(keyCode) ||
+      lettersPressed(keyCode) ||
+      equationKeysPressed(keyCode)
     ) {
-      //empty out cell if user starts typing without pressing enter
+      // Empty out cell if user starts typing without pressing enter
       if (!isEditing && !cell.readOnly) {
         return buildReturn({
           editing: start,
@@ -185,35 +181,34 @@ export const handlePasteLogic = (e, props, state) => {
  */
 function handleKeyboardCellMovement(start, forceEdit, isEditing, data, e) {
   const currentCell = data[start.i][start.j];
+  const keyCode = e.keyCode;
+  const tabKPressed = tabKeyPressed(keyCode);
   let newLocation = null;
 
   if (
       (!forceEdit && currentCell.component === undefined)
       || !isEditing
-      || e.keyCode !== TAB_KEY
+      || tabKPressed
   ) {
-    return false;
-  } else {
-    const tabAndShiftKeyPressed = e.keyCode === TAB_KEY && e.shiftKey;
-    const tabButShiftKeyPressed = !tabAndShiftKeyPressed && e.keyCode === TAB_KEY;
-
-    if (tabButShiftKeyPressed) { // Move right
+    if (tabKPressed && !e.shiftKey) { // Move right
       newLocation = {i : start.i, j: start.j + 1};
-      newLocation = isUndefined(data[newLocation.i][newLocation.j]) ? newLocation : { i : start.i + 1, j: 0}
-    } else if (e.keyCode === RIGHT_KEY) {
+      newLocation = !isUndefined(data[newLocation.i][newLocation.j]) ? newLocation : { i : start.i + 1, j: 0}
+    } else if (rightKeyPressed(keyCode)) { // Move right
       newLocation = {i: start.i, j: start.j + 1}
-    } else if (e.keyCode === LEFT_KEY || tabAndShiftKeyPressed) {
+    } else if (leftKeyPressed(keyCode) || (tabKPressed && e.shiftKey)) { // Move left
       newLocation = {i : start.i, j: start.j - 1}
-    } else if (e.keyCode === UP_KEY) {
+    } else if (upKeyPressed(keyCode)) { // Move up
       newLocation = {i: start.i - 1, j: start.j}
-    } else if (e.keyCode === DOWN_KEY) {
+    } else if (downKeyPressed(keyCode)) { // Move down
       newLocation = {i: start.i + 1, j: start.j}
     }
 
     if (
-      isUndefined(data[newLocation.i]) ||
-      (data[newLocation.i] && isUndefined(data[newLocation.i][newLocation.j]))
-    ) {
+      newLocation && (
+        isUndefined(data[newLocation.i]) ||
+        (data[newLocation.i] && isUndefined(data[newLocation.i][newLocation.j]))
+      )
+      ) {
       newLocation = null;
     }
   }
