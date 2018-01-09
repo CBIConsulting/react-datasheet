@@ -25,12 +25,11 @@ export default class ComponentCell extends PureComponent {
       row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
       value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick,
       onContextMenu, attributes, component, fixed, left
-    } = this.props;
-    const style = { width, left };
+    } = this.props
+    const style = { width, left }
 
     return (
       <td
-        ref={ ref => this.cellDomNode = ref }
         className={[
           className, 'cell', overflow,
           editing && 'editing', selected && 'selected',
@@ -70,4 +69,4 @@ ComponentCell.propTypes = {
   attributes: PropTypes.object,
   fixed: PropTypes.bool,
   left: PropTypes.string
-};
+}

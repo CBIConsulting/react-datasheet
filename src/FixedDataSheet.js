@@ -1,46 +1,37 @@
-import React, { PureComponent } from 'react';
-import PropTypes from 'prop-types';
-import DataCell from './DataCell';
-import ComponentCell from './ComponentCell';
-import HeaderCell from './HeaderCell';
+import React, { PureComponent } from 'react'
+import PropTypes from 'prop-types'
+import DataCell from './DataCell'
+import ComponentCell from './ComponentCell'
+import HeaderCell from './HeaderCell'
 
 // Utils
-import {
-  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
-  UP_KEY, RIGHT_KEY, DOWN_KEY,
-  DELETE_KEY, BACKSPACE_KEY,
-  ENTER_KEY
-} from './utils/constanct';
-
 import {
   handleKeyLogic,
   handleCopyLogic,
   handlePasteLogic
-} from './utils/dataSheet';
+} from './utils/dataSheet'
 
 import {
   isEmptyObj,
-  range,
   nullFunction,
   cellStateComparison,
   isCellSelected
-} from './utils/utils';
+} from './utils/utils'
 
 export default class FixedDataSheet extends PureComponent {
-
-  constructor(props) {
-    super(props);
-    this.onMouseDown        = this.onMouseDown.bind(this);
-    this.onMouseUp          = this.onMouseUp.bind(this);
-    this.onMouseOver        = this.onMouseOver.bind(this);
-    this.onDoubleClick      = this.onDoubleClick.bind(this);
-    this.onContextMenu      = this.onContextMenu.bind(this);
-    this.handleKey          = this.handleKey.bind(this);
-    this.handleCopy         = this.handleCopy.bind(this);
-    this.handlePaste        = this.handlePaste.bind(this);
-    this.handleTableScroll  = this.handleTableScroll.bind(this);
-    this.pageClick          = this.pageClick.bind(this);
-    this.onChange           = this.onChange.bind(this);
+  constructor (props) {
+    super(props)
+    this.onMouseDown = this.onMouseDown.bind(this)
+    this.onMouseUp = this.onMouseUp.bind(this)
+    this.onMouseOver = this.onMouseOver.bind(this)
+    this.onDoubleClick = this.onDoubleClick.bind(this)
+    this.onContextMenu = this.onContextMenu.bind(this)
+    this.handleKey = this.handleKey.bind(this)
+    this.handleCopy = this.handleCopy.bind(this)
+    this.handlePaste = this.handlePaste.bind(this)
+    this.handleTableScroll = this.handleTableScroll.bind(this)
+    this.pageClick = this.pageClick.bind(this)
+    this.onChange = this.onChange.bind(this)
 
     this.defaultState = {
       start: {},
@@ -52,68 +43,68 @@ export default class FixedDataSheet extends PureComponent {
       clear: {},
       scrollTop: 0,
       scrollLeft: 0
-    };
+    }
 
-    this.state = this.defaultState;
-    this.removeAllListeners = this.removeAllListeners.bind(this);
+    this.state = this.defaultState
+    this.removeAllListeners = this.removeAllListeners.bind(this)
   }
 
-  componentWillUnmount() {
-    this.removeAllListeners();
+  componentWillUnmount () {
+    this.removeAllListeners()
   }
 
-  componentDidMount() {
-    this.dgDom.addEventListener('scroll', this.handleTableScroll);
+  componentDidMount () {
+    this.dgDom.addEventListener('scroll', this.handleTableScroll)
   }
 
-  removeAllListeners() {
-    document.removeEventListener('keydown',   this.handleKey);
-    document.removeEventListener('mousedown', this.pageClick);
-    document.removeEventListener('mouseup',   this.onMouseUp);
-    document.removeEventListener('copy',      this.handleCopy);
-    document.removeEventListener('paste',     this.handlePaste);
-    this.dgDom.removeEventListener('scroll',  this.handleTableScroll);
+  removeAllListeners () {
+    document.removeEventListener('keydown', this.handleKey)
+    document.removeEventListener('mousedown', this.pageClick)
+    document.removeEventListener('mouseup', this.onMouseUp)
+    document.removeEventListener('copy', this.handleCopy)
+    document.removeEventListener('paste', this.handlePaste)
+    this.dgDom.removeEventListener('scroll', this.handleTableScroll)
   }
 
-  pageClick(e) {
+  pageClick (e) {
     if (!this.dgDom.contains(e.target)) {
-      this.setState(this.defaultState);
-      this.removeAllListeners();
+      this.setState(this.defaultState)
+      this.removeAllListeners()
     }
   }
 
-  handleCopy(e) {
+  handleCopy (e) {
     if (isEmptyObj(this.state.editing)) {
-      e.clipboardData.setData('text/plain', handleCopyLogic(e, this.props, this.state));
+      e.clipboardData.setData('text/plain', handleCopyLogic(e, this.props, this.state))
     }
   }
 
-  handlePaste(e) {
+  handlePaste (e) {
     if (isEmptyObj(this.state.editing)) {
-      const { onChange, onPaste } = this.props;
-      const { pastedData, end, changedCells } = handlePasteLogic(e, this.props, this.state);
+      const { onChange, onPaste } = this.props
+      const { pastedData, end, changedCells } = handlePasteLogic(e, this.props, this.state)
 
       if (onPaste) {
-        onPaste(pastedData);
-        this.setState({end: end});
+        onPaste(pastedData)
+        this.setState({end: end})
       } else {
         this.setState({end: end, editing: {}}, () => {
           changedCells.forEach(c => onChange(c.cell, c.i, c.j, c.value))
-        });
+        })
       }
     }
   }
 
-  handleKey(e) {
-    const { onChange } = this.props;
-    const { newState, cleanCells } = handleKeyLogic(e, this.props, this.state);
+  handleKey (e) {
+    const { onChange } = this.props
+    const { newState, cleanCells } = handleKeyLogic(e, this.props, this.state)
 
     if (cleanCells) {
       this.setState({editing: {}}, () => {
-        cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''));
-      });
+        cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''))
+      })
     } else if (newState) {
-      this.setState(newState);
+      this.setState(newState)
     }
   }
 
@@ -121,122 +112,125 @@ export default class FixedDataSheet extends PureComponent {
    * Handle table scroll event. Setting the left position (of the fixed columns) at the same
    * as the main container DOM scrollLeft will make it track the horizontal movement. The
    * same happens for the top to simulate the fixed header.
-   * 
+   *
    * @param {Event} e Event info object
    * @returns {void}
    */
-  handleTableScroll(e) {
+  handleTableScroll (e) {
     this.setState({
       scrollTop: this.dgDom.scrollTop,
       scrollLeft: this.dgDom.scrollLeft
-    });
+    })
   }
 
-  onContextMenu(evt, i, j) {
-    const { onContextMenu, data } = this.props;
+  onContextMenu (evt, i, j) {
+    const { onContextMenu, data } = this.props
 
     if (onContextMenu) {
-      onContextMenu(evt, data[i][j], i, j);
+      onContextMenu(evt, data[i][j], i, j)
     }
   }
 
-  onDoubleClick(i, j) {
-    let cell = this.props.data[i][j];
-    (!cell.readOnly) ? this.setState({editing: {i:i, j:j}, forceEdit: true, clear: {}}) : null;
+  onDoubleClick (i, j) {
+    if (!this.props.data[i][j].readOnly) {
+      this.setState({editing: {i: i, j: j}, forceEdit: true, clear: {}})
+    }
   }
 
-  onMouseDown(i, j) {
+  onMouseDown (i, j) {
     let editing = (isEmptyObj(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
-      ? {} : this.state.editing;
-    this.setState({selecting: true, start:{i, j}, end:{i, j}, editing: editing, forceEdit: false});
+      ? {} : this.state.editing
+    this.setState({selecting: true, start: {i, j}, end: {i, j}, editing: editing, forceEdit: false})
 
-    //Keep listening to mouse if user releases the mouse (dragging outside)
-    document.addEventListener('mouseup', this.onMouseUp);
-    //Listen for any keyboard presses (there is no input so must attach to document)
-    document.addEventListener('keydown', this.handleKey);
-    //Listen for any outside mouse clicks
-    document.addEventListener('mousedown', this.pageClick);
+    // Keep listening to mouse if user releases the mouse (dragging outside)
+    document.addEventListener('mouseup', this.onMouseUp)
+    // Listen for any keyboard presses (there is no input so must attach to document)
+    document.addEventListener('keydown', this.handleKey)
+    // Listen for any outside mouse clicks
+    document.addEventListener('mousedown', this.pageClick)
 
-    //Copy paste event handler
-    document.addEventListener('copy', this.handleCopy);
-    document.addEventListener('paste', this.handlePaste);
+    // Copy paste event handler
+    document.addEventListener('copy', this.handleCopy)
+    document.addEventListener('paste', this.handlePaste)
   }
 
-  onMouseOver(i, j) {
-    (this.state.selecting && isEmptyObj(this.state.editing)) ? this.setState({end: {i, j}}) : null;
-  }
-
-  onMouseUp() {
-    this.setState({selecting: false});
-    document.removeEventListener('mouseup', this.onMouseUp);
-  }
-
-  onChange(i, j, val) {
-    this.props.onChange(this.props.data[i][j], i, j, val);
-    this.setState({editing: {}});
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    let prevEnd = prevState.end;
-    if (!isEmptyObj(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
-      this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j]);
+  onMouseOver (i, j) {
+    if (this.state.selecting && isEmptyObj(this.state.editing)) {
+      this.setState({end: {i, j}})
     }
   }
 
-  parseStyleSize(dimension) {
-    return typeof dimension === 'number' ? dimension + 'px' : dimension;
+  onMouseUp () {
+    this.setState({selecting: false})
+    document.removeEventListener('mouseup', this.onMouseUp)
   }
 
-  buildTableHeader(data) {
+  onChange (i, j, val) {
+    this.props.onChange(this.props.data[i][j], i, j, val)
+    this.setState({editing: {}})
+  }
+
+  componentDidUpdate (prevProps, prevState) {
+    let prevEnd = prevState.end
+    if (!isEmptyObj(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
+      this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j])
+    }
+  }
+
+  parseStyleSize (dimension) {
+    return typeof dimension === 'number' ? dimension + 'px' : dimension
+  }
+
+  buildTableHeader (data) {
     return (
       <thead>
         { data.map((row, i) => this.buildHeaderRow(row, i)) }
       </thead>
-    );
+    )
   }
 
-  buildTableBody(data) {
+  buildTableBody (data) {
     return (
       <tbody>
         { data.map((row, i) => this.buildBodyRow(row, i)) }
       </tbody>
-    );
+    )
   }
 
-  buildHeaderRow(row, i) {
-    const { valueRenderer, attributesRenderer } = this.props;
-    const { scrollLeft } = this.state;
-    const key = 'header-row-' + i;
+  buildHeaderRow (row, i) {
+    const { valueRenderer, attributesRenderer } = this.props
+    const { scrollLeft } = this.state
+    const key = 'header-row-' + i
 
     return (
-      <tr key={ this.props.keyFn ? this.props.keyFn(key) : key }>
+      <tr key={this.props.keyFn ? this.props.keyFn(key) : key}>
         {
           row.map((cell, j) => (
             <HeaderCell
-              key={ cell.key ? cell.key : j }
-              className={ cell.className ? cell.className : ''}
-              row={ i }
-              col={ j }
-              colSpan={ cell.colSpan }
-              rowSpan={ cell.rowSpan }
-              readOnly={ true }
-              width={ this.parseStyleSize(cell.width) }
-              overflow={ cell.overflow }
-              value={ valueRenderer(cell, i, j, true) }
-              component={ cell.component }
-              attributes={ attributesRenderer ? attributesRenderer(cell, i, j, true) : {} }
-              fixed={ cell.fixed }
-              left={ cell.fixed ? this.parseStyleSize(scrollLeft) : null }
+              key={cell.key ? cell.key : j}
+              className={cell.className ? cell.className : ''}
+              row={i}
+              col={j}
+              colSpan={cell.colSpan}
+              rowSpan={cell.rowSpan}
+              readOnly
+              width={this.parseStyleSize(cell.width)}
+              overflow={cell.overflow}
+              value={valueRenderer(cell, i, j, true)}
+              component={cell.component}
+              attributes={attributesRenderer ? attributesRenderer(cell, i, j, true) : {}}
+              fixed={cell.fixed}
+              left={cell.fixed ? this.parseStyleSize(scrollLeft) : null}
             />
           ))
         }
       </tr>
-    );
+    )
   }
 
-  buildBodyRow(row, i) {
-    const { dataRenderer, valueRenderer, attributesRenderer } = this.props;
-    const { reverting, editing, clear, start, end, scrollLeft } = this.state;
+  buildBodyRow (row, i) {
+    const { dataRenderer, valueRenderer, attributesRenderer } = this.props
+    const { reverting, editing, clear, start, end, scrollLeft } = this.state
 
     return (
       <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
@@ -248,9 +242,9 @@ export default class FixedDataSheet extends PureComponent {
               row: i,
               col: j,
               selected: isCellSelected(start, end, i, j),
-              onMouseDown:   this.onMouseDown,
+              onMouseDown: this.onMouseDown,
               onDoubleClick: this.onDoubleClick,
-              onMouseOver:   this.onMouseOver,
+              onMouseOver: this.onMouseOver,
               onContextMenu: this.onContextMenu,
               editing: cellStateComparison(editing, i, j),
               reverting: cellStateComparison(reverting, i, j),
@@ -261,63 +255,63 @@ export default class FixedDataSheet extends PureComponent {
               attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {},
               fixed: cell.fixed,
               left: cell.fixed ? this.parseStyleSize(scrollLeft) : null
-            };
+            }
 
             if (cell.disableEvents) {
-              props.onMouseDown = nullFunction;
-              props.onDoubleClick = nullFunction;
-              props.onMouseOver = nullFunction;
-              props.onContextMenu = nullFunction;
+              props.onMouseDown = nullFunction
+              props.onDoubleClick = nullFunction
+              props.onMouseOver = nullFunction
+              props.onContextMenu = nullFunction
             }
 
             if (cell.component) {
               return (
                 <ComponentCell
                   {...props}
-                  forceComponent={ cell.forceComponent || false }
-                  component={ cell.component }
+                  forceComponent={cell.forceComponent || false}
+                  component={cell.component}
                 />
-              );
+              )
             }
 
             return (
               <DataCell
                 {...props}
-                data     = { dataRenderer ? dataRenderer(cell, i, j) : null }
-                clear    = { cellStateComparison(clear, i, j) }
-                rowSpan  = { cell.rowSpan }
-                onChange = { this.onChange }
-                readOnly = { cell.readOnly }
+                data={dataRenderer ? dataRenderer(cell, i, j) : null}
+                clear={cellStateComparison(clear, i, j)}
+                rowSpan={cell.rowSpan}
+                onChange={this.onChange}
+                readOnly={cell.readOnly}
               />
-            );
+            )
           })
         }
       </tr>
-    );
+    )
   }
 
-  render() {
-    const { className, overflow, data, headerData, width, height } = this.props;
-    const { isScrolling, scrollTop, scrollLeft } = this.state;
-    const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ');
+  render () {
+    const { className, overflow, data, headerData, width, height } = this.props
+    const { scrollTop } = this.state
+    const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ')
     const style = {
       width: this.parseStyleSize(width),
       height: this.parseStyleSize(height)
-    };
-    const header = this.buildTableHeader(headerData);
+    }
+    const header = this.buildTableHeader(headerData)
     const body = this.buildTableBody(data)
 
     return (
-      <div ref={ r => this.dgDom = r } className={ 'data-grid-wrapper fixed' } style={ style }>
-        <table className={ 'dtg-virtual-header ' + fullCN } style={{ top: scrollTop }}>
+      <div ref={r => (this.dgDom = r)} className={'data-grid-wrapper fixed'} style={style}>
+        <table className={'dtg-virtual-header ' + fullCN} style={{ top: scrollTop }}>
           { header }
         </table>
-        <table className={ 'dtg-main ' + fullCN }>
+        <table className={'dtg-main ' + fullCN}>
           { header }
           { body }
         </table>
       </div>
-    );
+    )
   }
 }
 
@@ -333,7 +327,7 @@ FixedDataSheet.propTypes = {
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
   parsePaste: PropTypes.func
-};
+}
 
 FixedDataSheet.defaultProps = {
   width: '800px',

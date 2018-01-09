@@ -25,7 +25,7 @@ class HeaderCell extends PureComponent {
 
   render () {
     const {
-      row, col, rowSpan, colSpan, width,
+      rowSpan, colSpan, width,
       overflow, className, value, component,
       attributes, fixed, left
     } = this.props
@@ -37,7 +37,6 @@ class HeaderCell extends PureComponent {
 
     return (
       <th
-        ref={ref => this.cellDomNode = ref}
         className={fullCN}
         colSpan={colSpan || 1}
         rowSpan={rowSpan || 1}

@@ -43,8 +43,8 @@ export default class DataCell extends PureComponent {
       row, col, rowSpan, readOnly, colSpan, width, overflow, value, className,
       editing, selected, onMouseDown, onMouseOver, onDoubleClick, onContextMenu,
       attributes, fixed, left
-    } = this.props;
-    const style = { width, left };
+    } = this.props
+    const style = { width, left }
 
     return (
       <td
@@ -56,10 +56,10 @@ export default class DataCell extends PureComponent {
           readOnly && 'read-only',
           this.state.updated && 'updated',
           fixed && 'fixed-column'
-        ].filter(a => a).join(' ') }
-        onMouseDown={() => onMouseDown(row,col)}
-        onDoubleClick={() => onDoubleClick(row,col)}
-        onMouseOver={() => onMouseOver(row,col)}
+        ].filter(a => a).join(' ')}
+        onMouseDown={() => onMouseDown(row, col)}
+        onDoubleClick={() => onDoubleClick(row, col)}
+        onMouseOver={() => onMouseOver(row, col)}
         onContextMenu={e => onContextMenu(e, row, col)}
         colSpan={colSpan || 1}
         rowSpan={rowSpan || 1}
@@ -91,5 +91,5 @@ DataCell.propTypes = {
   updated: PropTypes.bool,
   attributes: PropTypes.object,
   fixed: PropTypes.bool,
-  left: PropTypes.string,
-};
+  left: PropTypes.string
+}
