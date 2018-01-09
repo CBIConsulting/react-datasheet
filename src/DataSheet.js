@@ -117,23 +117,23 @@ export default class DataSheet extends PureComponent {
   }
 
   onDoubleClick(i, j) {
-    let cell = this.props.data[i][j];
+    const cell = this.props.data[i][j];
     (!cell.readOnly) ? this.setState({editing: {i:i, j:j}, forceEdit: true, clear: {}}) : null;
   }
 
   onMouseDown(i, j) {
-    let editing = (isEmptyObj(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
+    const editing = (isEmptyObj(this.state.editing) || this.state.editing.i !== i || this.state.editing.j !== j)
       ? {} : this.state.editing;
     this.setState({selecting: true, start:{i, j}, end:{i, j}, editing: editing, forceEdit: false});
 
-    //Keep listening to mouse if user releases the mouse (dragging outside)
+    // Keep listening to mouse if user releases the mouse (dragging outside)
     document.addEventListener('mouseup', this.onMouseUp);
-    //Listen for any keyboard presses (there is no input so must attach to document)
+    // Listen for any keyboard presses (there is no input so must attach to document)
     document.addEventListener('keydown', this.handleKey);
-    //Listen for any outside mouse clicks
+    // Listen for any outside mouse clicks
     document.addEventListener('mousedown', this.pageClick);
 
-    //Copy paste event handler
+    // Copy paste event handler
     document.addEventListener('copy', this.handleCopy);
     document.addEventListener('paste', this.handlePaste);
   }
