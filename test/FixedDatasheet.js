@@ -222,7 +222,7 @@ describe('FixedDatasheet', () => {
 
       it('renders a component properly', () => {
         customWrapper = mount(<FixedDataSheet
-          headerData={[[{value: 'Header'}]]}
+          headerData={[[{data: 'Header'}]]}
           data={[[{component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -234,7 +234,7 @@ describe('FixedDatasheet', () => {
 
       it('forces a component rendering', () => {
         customWrapper = mount(<FixedDataSheet
-          headerData={[[{value: 'Header'}]]}
+          headerData={[[{data: 'Header'}]]}
           data={[[{forceComponent: true, component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -249,7 +249,7 @@ describe('FixedDatasheet', () => {
 
       it('renders a cell with readOnly field properly', () => {
         customWrapper = mount(<FixedDataSheet
-          headerData={[[{value: 'Header'}, {value: 'Header 2'}]]}
+          headerData={[[{data: 'Header'}, {data: 'Header 2'}]]}
           data={[[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]}
           valueRenderer={(cell) => cell.data}
           dataRenderer={(cell) => '=+' + cell.data}
@@ -272,6 +272,63 @@ describe('FixedDatasheet', () => {
       it('renders a cell with disabled events', () => {
         customWrapper = mount(<FixedDataSheet
           headerData={[[{value: 'Header'}, {value: 'Header 2'}]]}
+          data={[[{data: 12, disableEvents: true}, {data: 24, disableEvents: true}]]}
+          valueRenderer={(cell) => cell.data}
+          onChange={(cell, i, j, value) => data[i][j].data = value}
+        />)
+        customWrapper.find('td').at(0).simulate('mouseDown')
+        customWrapper.find('td').at(0).simulate('doubleClick')
+        expect(customWrapper.state()).toEqual({
+          start: {},
+          end: {},
+          selecting: false,
+          editing: {},
+          reverting: {},
+          forceEdit: false,
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
+        })
+      })
+
+      it('render fixed columns and header on scroll', (done) => {
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={[[{data: 'Header', fixed: true}, {data: 'Header 2'}]]}
+            width={'10px'}
+            height={'10px'}
+            data={[[{data: 12, fixed: true}, {data: 24}]]}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
+
+        customWrapper.setState({
+          scrollTop: 30,
+          scrollLeft: 10
+        }, () => {
+          const header = customWrapper.find('table.dtg-virtual-header');
+          const headerCells = customWrapper.find('table.dtg-virtual-header th');
+          const bodyCells = customWrapper.find('td');
+
+          expect(header.node.style.top).toEqual('30px')
+          expect(headerCells.at(0).node.style.left).toEqual('10px')
+          expect(headerCells.at(1).node.style.left).toEqual('')
+          expect(bodyCells.at(0).node.style.left).toEqual('10px')
+          expect(bodyCells.at(1).node.style.left).toEqual('')
+          expect(headerCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(headerCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          expect(bodyCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(bodyCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          done()
+        })
+      })
+    })
+
+    describe('selection', () => {
+      it('', () => {
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{data: 'Header'}, {data: 'Header 2'}]]}
           data={[[{data: 12, disableEvents: true}, {data: 24, disableEvents: true}]]}
           valueRenderer={(cell) => cell.data}
           onChange={(cell, i, j, value) => data[i][j].data = value}
