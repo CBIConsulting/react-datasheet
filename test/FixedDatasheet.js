@@ -8,9 +8,9 @@ import {
 import sinon from 'sinon'
 import expect from 'expect'
 import _ from 'lodash';
-import DataSheet from '../src/DataSheet';
-import ComponentCell from '../src/ComponentCell';
+import FixedDataSheet from '../src/FixedDataSheet';
 import DataCell from '../src/DataCell';
+import HeaderCell from '../src/DataCell';
 import jsdom from 'mocha-jsdom';
 
 import {
@@ -22,8 +22,8 @@ import {
 
 import {dispatchKeyDownEvent, triggerMouseEvent} from './testUtils';
 
-describe('Datasheet', () => {
-  describe('Shallow DataSheet component', () => {
+describe('FixedDatasheet', () => {
+  describe('Shallow component', () => {
     describe('event listeners', () => {
       const savedDoc = global.doc
       after(() => {
@@ -35,12 +35,13 @@ describe('Datasheet', () => {
         global.document = { addEventListener: addEvent, removeEventListener: removeEvent}
 
         const component = shallow(
-          <DataSheet
+          <FixedDataSheet
             keyFn={(i) => 'custom_key_' + i}
             className={'test'}
             data={[[{data: 1}]]}
+            headerData={[[{data: 'header 1'}]]}
             valueRenderer={(cell) => cell.data}
-            onChange={(cell, i, j, value) => {}}
+            onChange={() => {}}
           />
         )
         component.unmount()
@@ -49,8 +50,9 @@ describe('Datasheet', () => {
     })
   })
 
-  describe('DataSheet component', () => {
+  describe('Component', () => {
     let data = []
+    let headerData = []
     let component = null
     let wrapper = null
     let customWrapper = null
@@ -77,11 +79,21 @@ describe('Datasheet', () => {
           width: 100
         }]
       ]
-      component = <DataSheet
+      headerData = [
+        [{
+          data: 'Header 1',
+          className: 'header-1'
+        }, {
+          data: 'Header 2',
+          className: 'header-2'
+        }]
+      ]
+      component = <FixedDataSheet
         keyFn={(i) => 'custom_key_' + i}
         className={'test'}
         overflow='nowrap'
         data={data}
+        headerData={headerData}
         valueRenderer={(cell) => cell.data}
         onChange={(cell, i, j, value) => data[i][j].data = value}
       />
@@ -96,16 +108,34 @@ describe('Datasheet', () => {
     })
     describe('rendering with varying props', () => {
       it('renders the proper elements', () => {
-        expect(wrapper.find('table').length).toEqual(1)
-        expect(_.values(wrapper.find('table').node.classList)).toEqual(['data-grid', 'test', 'nowrap'])
+        expect(wrapper.find('table').length).toEqual(2)
 
+        // Evaluate tables render with proper classNames
+        const tables =  wrapper.find('table').nodes;
+        expect(_.values(tables[0].classList)).toEqual(['dtg-virtual-header', 'data-grid', 'test', 'nowrap'])
+        expect(_.values(tables[1].classList)).toEqual(['dtg-main', 'data-grid', 'test', 'nowrap'])
+
+        // Evaluate table headers
+        const virtualHeaderCells = wrapper.find('table.dtg-virtual-header th > span').nodes.map(n => n.innerHTML)
+        const mainHeaderCells = wrapper.find('table.dtg-main th > span').nodes.map(n => n.innerHTML)
+        const headerContent = ['Header 1', 'Header 2'];
+        expect(wrapper.find('th > span').length).toEqual(4)
+        expect(virtualHeaderCells).toEqual(headerContent)
+        expect(mainHeaderCells).toEqual(headerContent)
+
+        // Evaluate table body content
         expect(wrapper.find('td > span').length).toEqual(4)
         expect(wrapper.find('td > span').nodes.map(n => n.innerHTML)).toEqual(['4', '2', '3', '5'])
       })
 
       it('renders the proper keys', () => {
-        expect(wrapper.find('table tr').at(0).key()).toEqual('custom_key_0')
-        expect(wrapper.find('table tr').at(1).key()).toEqual('custom_key_1')
+        // Evaluate header row keys
+        expect(wrapper.find('table thead tr').at(0).key()).toEqual('custom_key_header_0')
+        expect(wrapper.find(HeaderCell).at(1).key()).toEqual('custom_key')
+
+        // Evaluate body row keys
+        expect(wrapper.find('table tbody tr').at(0).key()).toEqual('custom_key_0')
+        expect(wrapper.find('table tbody tr').at(1).key()).toEqual('custom_key_1')
         expect(wrapper.find(DataCell).at(1).key()).toEqual('custom_key')
       })
 
@@ -119,63 +149,80 @@ describe('Datasheet', () => {
           ])
       })
       it('renders the data in the input properly if dataRenderer is set', () => {
-        customWrapper = mount(<DataSheet
-          data={data}
-          dataRenderer={(cell) => '=+' + cell.data}
-          valueRenderer={(cell) => cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            data={data}
+            headerData={headerData}
+            dataRenderer={(cell) => '=+' + cell.data}
+            valueRenderer={(cell) => cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         customWrapper.find('td').first().simulate('doubleClick')
         expect(customWrapper.find('td.cell input').nodes[0].value).toEqual('=+4')
       })
 
       it('renders proper elements by column', () => {
         const withDates = data.map((row, index) => [{data: new Date('2017-0' + (index + 1) + '-01')}, ...row])
-        customWrapper = mount(<DataSheet
-          data={withDates}
-          valueRenderer={(cell, i, j) => j === 0 ? cell.data.toGMTString() : cell.data}
-          dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={withDates}
+            valueRenderer={(cell, i, j, isHeader) => j === 0 && !isHeader ? cell.data.toGMTString() : cell.data}
+            dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         // expect(wrapper.find('td > span').length).toEqual(6);
         expect(customWrapper.find('td > span').nodes.map(n => n.innerHTML)).toEqual(['Sun, 01 Jan 2017 00:00:00 GMT', '4', '2', 'Wed, 01 Feb 2017 00:00:00 GMT', '3', '5'])
       })
 
       it('renders data in the input properly if dataRenderer is set by column', () => {
         const withDates = data.map((row, index) => [{data: new Date('2017-0' + (index + 1) + '-01')}, ...row])
-        customWrapper = mount(<DataSheet
-          data={withDates}
-          valueRenderer={(cell, i, j) => j === 0 ? cell.data.toGMTString() : cell.data}
-          dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={withDates}
+            valueRenderer={(cell, i, j, isHeader) => j === 0 && !isHeader ? cell.data.toGMTString() : cell.data}
+            dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         customWrapper.find('td').first().simulate('doubleClick')
         expect(customWrapper.find('td.cell input').nodes[0].value).toEqual('2017-01-01T00:00:00.000Z')
       })
 
       it('renders the attributes to the cell if the attributesRenderer is set', () => {
-        customWrapper = mount(<DataSheet
-          data={data}
-          valueRenderer={(cell, i, j) => cell.data}
-          dataRenderer={(cell, i, j) => cell.data}
-          attributesRenderer={(cell, i, j) => {
-            if (i === 0 && j === 0) {
-              return {'data-hint': 'Not valid'}
-            } else if (i === 1 && j === 1) {
-              return {'data-hint': 'Valid'}
-            }
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={data}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
+            dataRenderer={(cell, i, j) => cell.data}
+            attributesRenderer={(cell, i, j, isHeader) => {
+              if (!isHeader) {
+                if (i === 0 && j === 0) {
+                  return {'data-hint': 'Not valid'}
+                }
+                
+                if (i === 1 && j === 1) {
+                  return {'data-hint': 'Valid'}
+                }
+              }
 
-            return null
-          }}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+              return null
+            }}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
 
         expect(customWrapper.find('td.cell').first().props()['data-hint']).toEqual('Not valid')
         expect(customWrapper.find('td.cell').last().props()['data-hint']).toEqual('Valid')
       })
 
       it('renders a component properly', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{value: 'Header'}]]}
           data={[[{component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -186,7 +233,8 @@ describe('Datasheet', () => {
       })
 
       it('forces a component rendering', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{value: 'Header'}]]}
           data={[[{forceComponent: true, component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -200,7 +248,8 @@ describe('Datasheet', () => {
       })
 
       it('renders a cell with readOnly field properly', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{value: 'Header'}, {value: 'Header 2'}]]}
           data={[[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]}
           valueRenderer={(cell) => cell.data}
           dataRenderer={(cell) => '=+' + cell.data}
@@ -221,7 +270,8 @@ describe('Datasheet', () => {
       })
 
       it('renders a cell with disabled events', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{value: 'Header'}, {value: 'Header 2'}]]}
           data={[[{data: 12, disableEvents: true}, {data: 24, disableEvents: true}]]}
           valueRenderer={(cell) => cell.data}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -235,7 +285,9 @@ describe('Datasheet', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
     })
@@ -285,7 +337,8 @@ describe('Datasheet', () => {
 
       it('calls onSelect prop when a new element is selected', (done) => {
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={headerData}
             data={data}
             onSelect={(cell) => {
               try {
@@ -482,7 +535,9 @@ describe('Datasheet', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: true,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
 
         cells.at(0).find('input').node.value = 213
@@ -504,7 +559,9 @@ describe('Datasheet', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
         wrapper.find('td.cell.selected input').node.value = 213
         wrapper.find('td.cell.selected input').simulate('change')
@@ -519,7 +576,9 @@ describe('Datasheet', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -537,7 +596,9 @@ describe('Datasheet', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
         dispatchKeyDownEvent(RIGHT_KEY)
         expect(wrapper.state()).toEqual({
@@ -547,7 +608,9 @@ describe('Datasheet', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -569,9 +632,10 @@ describe('Datasheet', () => {
         evt.initEvent('copy', false, true)
         evt.clipboardData = { setData: (type, text) => copied = text}
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={headerData}
             data={data}
-            valueRenderer={(cell, i, j) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
             dataRenderer={(cell, i, j) => `{${i},${j}}${cell.data}`}
             onChange={(cell, i, j, value) => data[i][j].data = value}
           />
@@ -619,9 +683,10 @@ describe('Datasheet', () => {
       it('pastes data properly on a different cell', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -638,9 +703,10 @@ describe('Datasheet', () => {
       it('pastes multiple rows correclty on windows', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}], [{data: 1012, readOnly: true}, {data: 1024, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -657,9 +723,10 @@ describe('Datasheet', () => {
       it('doesnt auto paste data if cell is editing', () => {
         const datacust = [[{data: 12, readOnly: false}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -675,7 +742,8 @@ describe('Datasheet', () => {
       it('pastes data properly and fires onPaste function if defined', (done) => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{data: 'Header 1'}, {data: 'Header 2'}]]}
             data={datacust}
             valueRenderer={(cell) => cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
@@ -708,7 +776,8 @@ describe('Datasheet', () => {
       it('pastes data properly, using parsePaste if defined', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}], [{data: 1012, readOnly: true}, {data: 1024, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{data: 'Header 1'}, {data: 'Header 2'}]]}
             data={datacust}
             valueRenderer={(cell) => cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
@@ -741,7 +810,9 @@ describe('Datasheet', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -762,7 +833,9 @@ describe('Datasheet', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
       it('delete on DELETE_KEY', () => {
@@ -789,9 +862,10 @@ describe('Datasheet', () => {
       it('starts calls contextmenu with right object', (done) => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
             onContextMenu={(e, cell, i, j) => {
               try {
