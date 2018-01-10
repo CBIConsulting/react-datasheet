@@ -2,37 +2,16 @@ import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 
 class HeaderCell extends PureComponent {
-  constructor (props) {
-    super(props)
-    this.clearTimeoutIdForSizesUpdater = null
-  }
-
-  componentDidMount () {
-    this.checkWidth()
-  }
-
-  componentDidUpdate (prevProps) {
-    this.checkWidth()
-  }
-
-  componentWillUnmount () {
-    clearTimeout(this.timeout)
-
-    if (this.clearTimeoutIdForSizesUpdater) {
-      clearTimeout(this.clearTimeoutIdForSizesUpdater)
-    }
-  }
-
   render () {
     const {
-      rowSpan, colSpan, width,
-      overflow, className, value, component,
-      attributes, fixed, left
+      rowSpan, colSpan, width, component,
+      overflow, className, value, attributes,
+      fixed, left
     } = this.props
     const style = { width, left }
     const fullCN = [
-      className, 'header-cell', 'cell',
-      'read-only', overflow, fixed && 'fixed-column'
+      className, 'header-cell cell read-only',
+      overflow, fixed && 'fixed-column'
     ].filter(a => a).join(' ')
 
     return (
@@ -45,10 +24,10 @@ class HeaderCell extends PureComponent {
       >
         {
           component || (
-          <span style={{display: 'block'}}>
-            { value }
-          </span>
-            )
+            <span style={{display: 'block'}}>
+              { value }
+            </span>
+          )
         }
       </th>
     )

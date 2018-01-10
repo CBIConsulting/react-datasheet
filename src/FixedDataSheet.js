@@ -63,7 +63,7 @@ export default class FixedDataSheet extends PureComponent {
     document.removeEventListener('mouseup', this.onMouseUp)
     document.removeEventListener('copy', this.handleCopy)
     document.removeEventListener('paste', this.handlePaste)
-    this.dgDom.removeEventListener('scroll', this.handleTableScroll)
+    this.dgDom && this.dgDom.removeEventListener('scroll', this.handleTableScroll)
   }
 
   pageClick (e) {
@@ -200,7 +200,7 @@ export default class FixedDataSheet extends PureComponent {
   buildHeaderRow (row, i) {
     const { valueRenderer, attributesRenderer } = this.props
     const { scrollLeft } = this.state
-    const key = 'header-row-' + i
+    const key = 'header_' + i
 
     return (
       <tr key={this.props.keyFn ? this.props.keyFn(key) : key}>
@@ -213,7 +213,6 @@ export default class FixedDataSheet extends PureComponent {
               col={j}
               colSpan={cell.colSpan}
               rowSpan={cell.rowSpan}
-              readOnly
               width={this.parseStyleSize(cell.width)}
               overflow={cell.overflow}
               value={valueRenderer(cell, i, j, true)}

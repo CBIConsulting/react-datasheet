@@ -183,7 +183,7 @@ export default class DataSheet extends PureComponent {
                     width: typeof cell.width === 'number' ? cell.width + 'px' : cell.width,
                     overflow: cell.overflow,
                     value: valueRenderer(cell, i, j),
-                    attributes: attributesRenderer ? attributesRenderer(cell, i, j, false) : {}
+                    attributes: attributesRenderer ? attributesRenderer(cell, i, j) : {}
                   }
 
                   if (cell.disableEvents) {
@@ -224,7 +224,7 @@ DataSheet.propTypes = {
   data: PropTypes.array.isRequired,
   className: PropTypes.string,
   overflow: PropTypes.oneOf(['wrap', 'nowrap', 'clip']),
-  onChange: PropTypes.func,
+  onChange: PropTypes.func.isRequired,
   onContextMenu: PropTypes.func,
   valueRenderer: PropTypes.func.isRequired,
   dataRenderer: PropTypes.func,
