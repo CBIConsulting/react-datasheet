@@ -116,7 +116,8 @@ describe('Utils', () => {
     })
 
     it('isCellSelected', () => {
-      expect(true).toBe(true);
+      expect(isCellSelected({i: 0, j: 0}, {i: 1, j: 1}, 1, 2)).toBe(false);
+      expect(isCellSelected({i: 0, j: 0}, {i: 1, j: 1}, 0, 1)).toBe(true);
     })
 
     it('isUndefined', () => {
@@ -128,7 +129,9 @@ describe('Utils', () => {
     })
 
     it('range', () => {
-      expect(true).toBe(true);
+      expect(range(1, 5)).toEqual([1, 2, 3, 4, 5]);
+      expect(range(1, 3)).toEqual([1, 2, 3]);
+      expect(range(4, 8)).toEqual([4, 5, 6, 7, 8]);
     })
   })
 })
