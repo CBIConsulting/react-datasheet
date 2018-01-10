@@ -110,7 +110,7 @@ export const handleCopyLogic = (e, props, state) => {
       const cell = data[i][j]
       const value = dataRenderer ? dataRenderer(cell, i, j) : null
 
-      if (value === '' || value === null || isUndefined(value)) {
+      if (value === null || value === '' || isUndefined(value)) {
         return valueRenderer(cell, i, j)
       }
 
