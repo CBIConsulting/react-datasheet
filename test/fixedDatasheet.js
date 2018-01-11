@@ -307,10 +307,13 @@ describe('FixedDatasheet', () => {
           scrollTop: 30,
           scrollLeft: 10
         }, () => {
+          const mainTable = customWrapper.find('table.dtg-main');
           const header = customWrapper.find('table.dtg-virtual-header');
           const headerCells = customWrapper.find('table.dtg-virtual-header th');
           const bodyCells = customWrapper.find('td');
 
+          expect(mainTable.node.classList.contains('scrolling-down')).toBe(true);
+          expect(header.node.classList.contains('scrolling-down')).toBe(true);
           expect(header.node.style.top).toEqual('30px')
           expect(headerCells.at(0).node.style.left).toEqual('10px')
           expect(headerCells.at(1).node.style.left).toEqual('')

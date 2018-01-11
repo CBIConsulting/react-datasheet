@@ -176,15 +176,19 @@ export default class FixedDataSheet extends PureComponent {
     return typeof dimension === 'number' ? dimension + 'px' : dimension
   }
 
-  buildTableHeader (data) {
+  buildTableHeader () {
+    const { headerData } = this.props
+
     return (
       <thead>
-        { data.map((row, i) => this.buildHeaderRow(row, i)) }
+        { headerData.map((row, i) => this.buildHeaderRow(row, i)) }
       </thead>
     )
   }
 
-  buildTableBody (data) {
+  buildTableBody () {
+    const { data } = this.props
+
     return (
       <tbody>
         { data.map((row, i) => this.buildBodyRow(row, i)) }
@@ -285,15 +289,18 @@ export default class FixedDataSheet extends PureComponent {
   }
 
   render () {
-    const { className, overflow, data, headerData, width, height } = this.props
+    const { className, overflow, width, height } = this.props
     const { scrollTop } = this.state
-    const fullCN = ['data-grid', className, overflow].filter(c => c).join(' ')
+    const fullCN = [
+      'data-grid', className, overflow,
+      scrollTop && 'scrolling-down'
+    ].filter(c => c).join(' ')
     const style = {
       width: this.parseStyleSize(width),
       height: this.parseStyleSize(height)
     }
-    const header = this.buildTableHeader(headerData)
-    const body = this.buildTableBody(data)
+    const header = this.buildTableHeader()
+    const body = this.buildTableBody()
 
     return (
       <div ref={r => (this.dgDom = r)} className={'data-grid-wrapper fixed'} style={style}>
