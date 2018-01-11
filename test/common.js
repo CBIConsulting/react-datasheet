@@ -15,6 +15,13 @@ import {
   range
 } from '../src/utils/utils'
 
+import {
+  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
+  UP_KEY, RIGHT_KEY, DOWN_KEY,
+  DELETE_KEY, BACKSPACE_KEY,
+  ENTER_KEY
+} from '../src/utils/constanct';
+
 describe('Utils', () => {
   describe('Logic functions', () => {
     const copyData = '5\t2\n1\t6';
@@ -29,6 +36,7 @@ describe('Utils', () => {
     const data = [
       [{value: 5}, {value: 2}],
       [{value: 1}, {value: 6}],
+      [{value: 8}, {value: 9}],
     ];
     const valueRenderer = cell => cell.value;
     const props = {data, valueRenderer};
@@ -95,8 +103,294 @@ describe('Utils', () => {
       })
     })
 
-    it('handleKeyLogic', () => {
-      expect(true).toBe(true);
+    describe('handleKeyLogic', () => {
+      const currentPosition = {i: 1, j: 0};
+      const doNothing = {
+        newState: false,
+        cleanCells: false
+      }
+      let customEvent, customState;
+      
+      beforeEach(() => {
+        customEvent = {
+          ctrlKey: false,
+          keyCode: null,
+          shiftKey: false,
+          ...eventSimulation
+        }
+        
+        customState = {
+          start: currentPosition,
+          end: currentPosition,
+          editing: {},
+          forceEdit: false
+        }
+      })
+
+      it('do nothing when no selected cells', () => {
+        customState.start = {}
+        customState.end = {}
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+      })
+
+      it('do nothing when there\'re selected cells but control key is not pressed', () => {
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+      })
+
+      it('do nothing on movement key pressed and editing', () => {
+        customState.editing = currentPosition
+        customEvent.keyCode = LEFT_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+      })
+
+      it('move right and exit editing when tab key pressed', () => {
+        customState.editing = currentPosition
+        customEvent.keyCode = TAB_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {j: 1, i: 1},
+            end: {j: 1, i: 1}
+          }
+        })
+      })
+
+      it('move left and exit editing when tab key + shift key pressed', () => {
+        const customPosition = {i: 1, j: 1}
+        customState.start = customPosition
+        customState.end = customPosition
+        customState.editing = customPosition
+        customEvent.keyCode = TAB_KEY
+        customEvent.shiftKey = true
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {i: 1, j: 0},
+            end: {i: 1, j: 0}
+          }
+        })
+      })
+
+      it('move left when left key pressed', () => {
+        const customPosition = {i: 1, j: 1}
+        customState.start = customPosition
+        customState.end = customPosition
+        customEvent.keyCode = LEFT_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {i: 1, j: 0},
+            end: {i: 1, j: 0}
+          }
+        })
+      })
+
+      it('move right when right key pressed', () => {
+        customEvent.keyCode = RIGHT_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {i: 1, j: 1},
+            end: {i: 1, j: 1}
+          }
+        })
+      })
+
+      it('move down when down key pressed', () => {
+        customEvent.keyCode = DOWN_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {i: 2, j: 0},
+            end: {i: 2, j: 0}
+          }
+        })
+      })
+
+      it('move up when up key pressed', () => {
+        customEvent.keyCode = UP_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            start: {i: 0, j: 0},
+            end: {i: 0, j: 0}
+          }
+        })
+      })
+
+      it('get selected cells to remove on delete keys pressed', () => {
+        customEvent.keyCode = DELETE_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: [{cell: {value: 1}, i: 1, j: 0}],
+          newState: {editing: {}}
+        });
+      })
+
+      it('get selected cells to remove on delete keys pressed and not editing', () => {
+        customEvent.keyCode = DELETE_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: [{cell: {value: 1}, i: 1, j: 0}],
+          newState: {editing: {}}
+        })
+      })
+
+      it('do nothing on delete keys pressed and editing', () => {
+        customState.editing = currentPosition
+        customEvent.keyCode = DELETE_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+      })
+
+      it('get selected cells to remove on delete keys pressed', () => {
+        customEvent.keyCode = DELETE_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: [{cell: {value: 1}, i: 1, j: 0}],
+          newState: {editing: {}}
+        });
+      })
+
+      it('revert changes on escape key pressed and exit edit mode', () => {
+        customState.editing = currentPosition
+        customEvent.keyCode = ESCAPE_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            reverting: currentPosition
+          }
+        });
+      })
+
+      it('do nothing on escape key pressed and not editing', () => {
+        customEvent.keyCode = ESCAPE_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+      })
+
+      it('edit the current cell on enter key pressed and not already editing (not read only)', () => {    
+        customEvent.keyCode = ENTER_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: currentPosition,
+            clear: {},
+            reverting: {},
+            forceEdit: true
+          }
+        });
+      })
+
+      it('do nothing on enter key pressed and not already editing (read only)', () => {
+        const customProps = {
+          data: [
+            [{value: 5}],
+            [{value: 1, readOnly: true}]
+          ]
+        }
+        customEvent.keyCode = ENTER_KEY
+        expect(handleKeyLogic(customEvent, customProps, customState)).toEqual(doNothing);
+      })
+
+      it('move to next row and leave editing on enter key pressed and editing', () => {
+        customState.editing = currentPosition
+        customEvent.keyCode = ENTER_KEY
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            reverting: {},
+            start: {i: 2, j: 0},
+            end: {i: 2, j: 0}
+          }
+        });
+      })
+
+      it('leave editing on enter key pressed and editing, bein the last row', () => {
+        const customPosition = {i: 2, j: 0}
+        customState.start = customPosition
+        customState.end = customPosition
+        customState.editing = customPosition
+        customEvent.keyCode = ENTER_KEY
+
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual({
+          cleanCells: false,
+          newState: {
+            editing: {},
+            reverting: {}
+          }
+        });
+      })
+
+      it('empty out cell if user starts typing without pressing enter', () => {
+        const expected = {
+          cleanCells: false,
+          newState: {
+            editing: currentPosition,
+            clear: currentPosition,
+            reverting: {},
+            forceEdit: false
+          }
+        };
+
+        // Numbers
+        customEvent.keyCode = 48
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 50
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 54
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 57
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+
+        // Ignore
+        customEvent.keyCode = 58
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+        customEvent.keyCode = 64
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+
+        // Letters
+        customEvent.keyCode = 65
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 69
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 75
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 90
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+
+        // Ignore
+        customEvent.keyCode = 92
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+        customEvent.keyCode = 95
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(doNothing);
+
+        // Num pad
+        customEvent.keyCode = 187
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 189
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 190
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 107
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 109
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+        customEvent.keyCode = 110
+        expect(handleKeyLogic(customEvent, props, customState)).toEqual(expected);
+      })
     })
   })
 
@@ -107,7 +401,8 @@ describe('Utils', () => {
     })
 
     it('nullFunction', () => {
-      expect(nullFunction()).toEqual(undefined);
+      const result = nullFunction();
+      expect(result === undefined || result === null).toBe(true);
     })
 
     it('cellStateComparison', () => {
