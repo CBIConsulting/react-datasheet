@@ -31,14 +31,15 @@ import {
 export const handleKeyLogic = (e, props, state) => {
   const { start, end, editing, forceEdit } = state
   const { data } = props
-  const noCellsSelected = isEmptyObj(start)
+  const haveSelectedCells = !isEmptyObj(start)
   const ctrlKeyPressed = e.ctrlKey || e.metaKey
   const buildReturn = (newState = false, cleanCells = false) => ({ newState, cleanCells })
 
-  if (!noCellsSelected && !ctrlKeyPressed) {
+  if (haveSelectedCells && !ctrlKeyPressed) {
     const isEditing = !isEmptyObj(editing)
     const newLocation = handleKeyboardCellMovement(start, forceEdit, isEditing, data, e)
-
+    
+    // Movement key pressed
     if (newLocation) {
       e.preventDefault()
 
@@ -49,42 +50,63 @@ export const handleKeyLogic = (e, props, state) => {
       })
     }
 
-    const cell = data[start.i][start.j]
-    const keyCode = e.keyCode
-    const enterKPressed = enterKeyPressed(keyCode)
+    const readOnly = data[start.i][start.j].readOnly
 
-    if (deleteKeyPressed(keyCode) && !isEditing) {
+    // If delete key pressed then get the selected cells (to empty those cells)
+    if (deleteKeyPressed(e.keyCode) && !isEditing) {
       e.preventDefault()
-      return buildReturn(false, getSelectedCells(data, start, end, false))
-    } else if (enterKPressed && isEditing) {
-      let newLocation = start
+      return buildReturn({editing: {}}, getSelectedCells(data, start, end, false))
+    }
+    
+    // If enter key and is editing go to next row (if there is more rows)
+    if (enterKeyPressed(e.keyCode) && isEditing) {
+      const upState = {
+        editing: {},
+        reverting: {}
+      };
 
-      // Go to next row once the edit is done
       if (data[start.i + 1] && data[start.i + 1][start.j]) {
-        newLocation = {i: start.i + 1, j: start.j}
+        upState.start = {i: start.i + 1, j: start.j }
+        upState.end = upState.start
       }
 
-      return buildReturn({editing: {}, reverting: {}, start: newLocation, end: newLocation})
-    } else if (escapeKeyPressed(keyCode) && isEditing) {
-      return buildReturn({editing: {}, reverting: editing })
-    } else if (enterKPressed && !isEditing && !cell.readOnly) {
-      return buildReturn({editing: start, clear: {}, reverting: {}, forceEdit: true})
-    } else if (
-      enterKPressed ||
-      numbersPressed(keyCode) ||
-      numPadKeysPressed(keyCode) ||
-      lettersPressed(keyCode) ||
-      equationKeysPressed(keyCode)
+      return buildReturn(upState)
+    }
+    
+    // If escape key was pressed and it's editing then revert the changes.
+    if (escapeKeyPressed(e.keyCode) && isEditing) {
+      return buildReturn({
+        editing: {},
+        reverting: editing
+      })
+    }
+    
+    // If enter and not editing then edit the current cell
+    if (enterKeyPressed(e.keyCode) && !isEditing && !readOnly) {
+      return buildReturn({
+        editing: start,
+        clear: {},
+        reverting: {},
+        forceEdit: true
+      })
+    }
+    
+    // Empty out cell if user starts typing without pressing enter
+    if (
+      !isEditing && !readOnly &&
+      (
+        numbersPressed(e.keyCode) ||
+        numPadKeysPressed(e.keyCode) ||
+        lettersPressed(e.keyCode) ||
+        equationKeysPressed(e.keyCode)
+      )  
     ) {
-      // Empty out cell if user starts typing without pressing enter
-      if (!isEditing && !cell.readOnly) {
-        return buildReturn({
-          editing: start,
-          clear: start,
-          reverting: {},
-          forceEdit: false
-        })
-      }
+      return buildReturn({
+        editing: start,
+        clear: start,
+        reverting: {},
+        forceEdit: false
+      })
     }
   }
 
@@ -175,40 +197,39 @@ export const handlePasteLogic = (e, props, state) => {
  * @param {bool} isEditing Indicates if a cell is being edited right now.
  * @param {array} data Cells data of the datasheet
  * @param {KeyboardEvent} e KeyboardEvent data object
- * @returns {object | null} The new selected cell location or null if there is no cell
- *                          movement made / allowed (the new location doesn't exist whitin
- *                          the datasheet area)
+ * @returns {object | null} The new selected cell location or null if no movement key
+ *                          was pressed
  */
 function handleKeyboardCellMovement (start, forceEdit, isEditing, data, e) {
-  const currentCell = data[start.i][start.j]
-  const keyCode = e.keyCode
-  const tabKPressed = tabKeyPressed(keyCode)
+  const tabKPressed = tabKeyPressed(e.keyCode)
   let newLocation = null
 
+  // Ignore movement keys when editing unless it's tab key
   if (
-      (!forceEdit && currentCell.component === undefined) ||
+      (!forceEdit && isUndefined(data[start.i][start.j].component)) ||
       !isEditing ||
       tabKPressed
   ) {
     if (tabKPressed && !e.shiftKey) { // Move right
       newLocation = {i: start.i, j: start.j + 1}
       newLocation = !isUndefined(data[newLocation.i][newLocation.j]) ? newLocation : { i: start.i + 1, j: 0}
-    } else if (rightKeyPressed(keyCode)) { // Move right
+    } else if (rightKeyPressed(e.keyCode)) { // Move right
       newLocation = {i: start.i, j: start.j + 1}
-    } else if (leftKeyPressed(keyCode) || (tabKPressed && e.shiftKey)) { // Move left
+    } else if (leftKeyPressed(e.keyCode) || (tabKPressed && e.shiftKey)) { // Move left
       newLocation = {i: start.i, j: start.j - 1}
-    } else if (upKeyPressed(keyCode)) { // Move up
+    } else if (upKeyPressed(e.keyCode)) { // Move up
       newLocation = {i: start.i - 1, j: start.j}
-    } else if (downKeyPressed(keyCode)) { // Move down
+    } else if (downKeyPressed(e.keyCode)) { // Move down
       newLocation = {i: start.i + 1, j: start.j}
     }
 
+    // If the new location doesn't exist whitin the datasheet area
     if (
       newLocation && (
-        isUndefined(data[newLocation.i]) ||
+        !data[newLocation.i] ||
         (data[newLocation.i] && isUndefined(data[newLocation.i][newLocation.j]))
       )
-      ) {
+    ) {
       newLocation = null
     }
   }
