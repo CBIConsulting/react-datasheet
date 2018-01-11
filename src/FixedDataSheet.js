@@ -84,14 +84,13 @@ export default class FixedDataSheet extends PureComponent {
       const { onChange, onPaste } = this.props
       const { pastedData, end, changedCells } = handlePasteLogic(e, this.props, this.state)
 
-      if (onPaste) {
-        onPaste(pastedData)
-        this.setState({end: end})
-      } else {
-        this.setState({end: end, editing: {}}, () => {
+      this.setState({end: end, editing: {}}, () => {
+        if (onPaste) {
+          onPaste(pastedData)
+        } else {
           changedCells.forEach(c => onChange(c.cell, c.i, c.j, c.value))
-        })
-      }
+        }
+      })
     }
   }
 
@@ -99,13 +98,9 @@ export default class FixedDataSheet extends PureComponent {
     const { onChange } = this.props
     const { newState, cleanCells } = handleKeyLogic(e, this.props, this.state)
 
-    if (cleanCells) {
-      this.setState({editing: {}}, () => {
-        cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''))
-      })
-    } else if (newState) {
-      this.setState(newState)
-    }
+    newState && this.setState(newState, () => {
+      cleanCells && cleanCells.forEach(c => onChange(c.cell, c.i, c.j, ''))
+    })
   }
 
   /**
