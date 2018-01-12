@@ -151,3 +151,8 @@ pre {
 .github-link:hover {
   color: #DDD;
 }
+
+.sheet-container.fixed .cell {
+  width: 100px;
+  text-align: center;
+}

@@ -1,9 +1,7 @@
 import React from 'react'
-import Select from 'react-select'
-import _ from 'lodash'
 import 'react-select/dist/react-select.css'
 import  './lib/react-datasheet.css'
-import {BasicSheet, MathSheet, ComponentSheet} from './examples/index';
+import {BasicSheet, MathSheet, ComponentSheet, FixedDataSheet} from './examples/index';
 
 export default class App extends React.Component {
   render () {
@@ -50,6 +48,14 @@ export default class App extends React.Component {
           <h3 style={{color: '#e63946'}}>Sheet with components</h3>
           <div className={'sheet-container'}>
             <ComponentSheet />
+          </div>
+          <div className={'divider'} />
+          <h3 style={{color: '#e63946'}}>Basic fixed datasheet</h3>
+          <small>
+            Basic data sheet with fixed header and columns
+          </small>
+          <div className={'sheet-container fixed'}>
+            <FixedDataSheet />
           </div>
           <div className={'divider'} />
         </div>
