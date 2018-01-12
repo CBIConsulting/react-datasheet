@@ -130,8 +130,7 @@ table.data-grid.nowrap th.cell.clip {
   z-index: 1;
 }
 
-.data-grid-wrapper table.dtg-virtual-header.scrolling thead tr:last-child,
-.data-grid-wrapper table.data-grid tbody tr td.fixed-column.last.scrolling {
+.data-grid-wrapper table.dtg-virtual-header.scrolling thead tr:last-child {
   box-shadow: 0px 1px 6px 1px #eaeaea;
 }
 
@@ -160,4 +159,14 @@ table.data-grid.nowrap th.cell.clip {
 .data-grid-wrapper table.data-grid thead tr th.fixed-column.last.scrolling,
 .data-grid-wrapper table.data-grid tbody tr td.fixed-column.last.scrolling {
   border-right-width: 2px;
+}
+
+.data-grid-wrapper table.data-grid .fixed-column.last.scrolling:after {
+  box-shadow: 18px 0 11px -15px #eaeaea inset;
+  content: " ";
+  height: 100%;
+  position: absolute;
+  top: 0;
+  right: -10px;
+  width: 10px;
 }
