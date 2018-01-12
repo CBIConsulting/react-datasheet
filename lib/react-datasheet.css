@@ -136,12 +136,19 @@ table.data-grid.nowrap th.cell.clip {
 
 .data-grid-wrapper table.data-grid {
   border-collapse: separate;
+  border-spacing: 0;
 }
 
 .data-grid-wrapper table.data-grid td.cell,
 .data-grid-wrapper table.data-grid th.cell {
   border-top: none;
   border-left: none;
+}
+
+.data-grid-wrapper table.data-grid td.cell > input {
+  height: inherit;
+  width: 100%;
+  padding: 0 5px;
 }
 
 .data-grid-wrapper table.data-grid td.cell.selected,

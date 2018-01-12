@@ -11,7 +11,7 @@ export default class App extends React.Component {
           <h1>React datasheet</h1>
           <h4>Simple and highly customizable excel-like spreadsheet</h4>
           <pre>npm install react-datasheet --save</pre>
-          <a className={'github-link'} href="https://github.com/nadbm/react-datasheet"><span class="hidden-xs"> View on GitHub </span><span class="octicon octicon-mark-github" aria-hidden="true"></span></a>
+          <a className={'github-link'} href="https://github.com/nadbm/react-datasheet"><span className="hidden-xs"> View on GitHub </span><span className="octicon octicon-mark-github" aria-hidden="true"></span></a>
         </div>
         <div className={'container'} >
           <div style={{float: 'right', marginTop: '-20px'}}>

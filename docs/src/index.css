@@ -87,7 +87,7 @@ table.data-grid {
   box-shadow: 0px 0px 1px #CCC;
 }
 .sheet-container table.data-grid tr td.cell:not(.selected){
-  border: 1px solid #ececec;
+  border-color:#ececec;
 }
 .sheet-container table.data-grid tr td.cell{
   font-size: 12px;
@@ -152,7 +152,18 @@ pre {
   color: #DDD;
 }
 
+/* Fixed header component */
 .sheet-container.fixed .cell {
   width: 100px;
   text-align: center;
+  font-size: 12px;
+}
+
+.sheet-container.fixed * {
+  box-sizing: border-box;
+}
+
+.sheet-container.fixed *:before,
+.sheet-container.fixed *:after, {
+  box-sizing: border-box;
 }
