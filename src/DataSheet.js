@@ -12,7 +12,6 @@ import {
 
 import {
   isEmptyObj,
-  nullFunction,
   cellStateComparison,
   isCellSelected
 } from './utils/utils'
@@ -182,10 +181,10 @@ export default class DataSheet extends PureComponent {
                   }
 
                   if (cell.disableEvents) {
-                    props.onMouseDown = nullFunction
-                    props.onDoubleClick = nullFunction
-                    props.onMouseOver = nullFunction
-                    props.onContextMenu = nullFunction
+                    props.onMouseDown = () => {}
+                    props.onDoubleClick = () => {}
+                    props.onMouseOver = () => {}
+                    props.onContextMenu = () => {}
                   }
 
                   if (cell.component) {

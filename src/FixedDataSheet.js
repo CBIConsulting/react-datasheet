@@ -13,7 +13,6 @@ import {
 
 import {
   isEmptyObj,
-  nullFunction,
   cellStateComparison,
   isCellSelected
 } from './utils/utils'
@@ -51,10 +50,18 @@ export default class FixedDataSheet extends PureComponent {
 
   componentWillUnmount () {
     this.removeAllListeners()
+    this.dgDom && this.dgDom.removeEventListener('scroll', this.handleTableScroll)
   }
 
   componentDidMount () {
     this.dgDom.addEventListener('scroll', this.handleTableScroll)
+  }
+
+  componentDidUpdate (prevProps, prevState) {
+    let prevEnd = prevState.end
+    if (!isEmptyObj(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
+      this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j])
+    }
   }
 
   removeAllListeners () {
@@ -63,7 +70,6 @@ export default class FixedDataSheet extends PureComponent {
     document.removeEventListener('mouseup', this.onMouseUp)
     document.removeEventListener('copy', this.handleCopy)
     document.removeEventListener('paste', this.handlePaste)
-    this.dgDom && this.dgDom.removeEventListener('scroll', this.handleTableScroll)
   }
 
   pageClick (e) {
@@ -165,73 +171,64 @@ export default class FixedDataSheet extends PureComponent {
     this.setState({editing: {}})
   }
 
-  componentDidUpdate (prevProps, prevState) {
-    let prevEnd = prevState.end
-    if (!isEmptyObj(this.state.end) && !(this.state.end.i === prevEnd.i && this.state.end.j === prevEnd.j)) {
-      this.props.onSelect && this.props.onSelect(this.props.data[this.state.end.i][this.state.end.j])
-    }
-  }
-
   parseStyleSize (dimension) {
     return typeof dimension === 'number' ? dimension + 'px' : dimension
   }
 
-  buildTableHeader () {
-    const { headerData } = this.props
+  buildHeader () {
+    const {
+      headerData, valueRenderer,
+      attributesRenderer, keyFn
+    } = this.props
+    const { scrollLeft } = this.state
+    const rows = headerData.map((row, i) => {
+      const key = 'header_' + i
+
+      return (
+        <tr key={keyFn ? keyFn(key) : key}>
+          {
+            row.map((cell, j) => (
+              <HeaderCell
+                key={cell.key ? cell.key : j}
+                className={cell.className ? cell.className : ''}
+                row={i}
+                col={j}
+                colSpan={cell.colSpan}
+                rowSpan={cell.rowSpan}
+                width={this.parseStyleSize(cell.width)}
+                overflow={cell.overflow}
+                value={valueRenderer(cell, i, j, true)}
+                component={cell.component}
+                attributes={attributesRenderer ? attributesRenderer(cell, i, j, true) : {}}
+                fixed={cell.fixed}
+                left={cell.fixed ? this.parseStyleSize(scrollLeft) : null}
+              />
+            ))
+          }
+        </tr>
+      )
+    })
 
     return (
       <thead>
-        { headerData.map((row, i) => this.buildHeaderRow(row, i)) }
+        { rows }
       </thead>
     )
   }
 
-  buildTableBody () {
-    const { data } = this.props
+  buildBody () {
+    const {
+      data, dataRenderer, valueRenderer,
+      attributesRenderer, keyFn
+    } = this.props
 
-    return (
-      <tbody>
-        { data.map((row, i) => this.buildBodyRow(row, i)) }
-      </tbody>
-    )
-  }
+    const {
+      reverting, editing, clear,
+      start, end, scrollLeft
+    } = this.state
 
-  buildHeaderRow (row, i) {
-    const { valueRenderer, attributesRenderer } = this.props
-    const { scrollLeft } = this.state
-    const key = 'header_' + i
-
-    return (
-      <tr key={this.props.keyFn ? this.props.keyFn(key) : key}>
-        {
-          row.map((cell, j) => (
-            <HeaderCell
-              key={cell.key ? cell.key : j}
-              className={cell.className ? cell.className : ''}
-              row={i}
-              col={j}
-              colSpan={cell.colSpan}
-              rowSpan={cell.rowSpan}
-              width={this.parseStyleSize(cell.width)}
-              overflow={cell.overflow}
-              value={valueRenderer(cell, i, j, true)}
-              component={cell.component}
-              attributes={attributesRenderer ? attributesRenderer(cell, i, j, true) : {}}
-              fixed={cell.fixed}
-              left={cell.fixed ? this.parseStyleSize(scrollLeft) : null}
-            />
-          ))
-        }
-      </tr>
-    )
-  }
-
-  buildBodyRow (row, i) {
-    const { dataRenderer, valueRenderer, attributesRenderer } = this.props
-    const { reverting, editing, clear, start, end, scrollLeft } = this.state
-
-    return (
-      <tr key={this.props.keyFn ? this.props.keyFn(i) : i}>
+    const rows = data.map((row, i) => (
+      <tr key={keyFn ? keyFn(i) : i}>
         {
           row.map((cell, j) => {
             const props = {
@@ -256,10 +253,10 @@ export default class FixedDataSheet extends PureComponent {
             }
 
             if (cell.disableEvents) {
-              props.onMouseDown = nullFunction
-              props.onDoubleClick = nullFunction
-              props.onMouseOver = nullFunction
-              props.onContextMenu = nullFunction
+              props.onMouseDown = () => {}
+              props.onDoubleClick = () => {}
+              props.onMouseOver = () => {}
+              props.onContextMenu = () => {}
             }
 
             if (cell.component) {
@@ -285,6 +282,12 @@ export default class FixedDataSheet extends PureComponent {
           })
         }
       </tr>
+    ))
+
+    return (
+      <tbody>
+        { rows }
+      </tbody>
     )
   }
 
@@ -299,8 +302,8 @@ export default class FixedDataSheet extends PureComponent {
       width: this.parseStyleSize(width),
       height: this.parseStyleSize(height)
     }
-    const header = this.buildTableHeader()
-    const body = this.buildTableBody()
+    const header = this.buildHeader()
+    const body = this.buildBody()
 
     return (
       <div ref={r => (this.dgDom = r)} className={'data-grid-wrapper fixed'} style={style}>

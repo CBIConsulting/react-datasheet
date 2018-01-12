@@ -8,7 +8,6 @@ import {
 
 import {
   isEmptyObj,
-  nullFunction,
   cellStateComparison,
   isCellSelected,
   isUndefined,
@@ -398,11 +397,6 @@ describe('Utils', () => {
     it('isEmptyObj', () => {
       expect(isEmptyObj({})).toBe(true);
       expect(isEmptyObj({a:1})).toBe(false);
-    })
-
-    it('nullFunction', () => {
-      const result = nullFunction();
-      expect(result === undefined || result === null).toBe(true);
     })
 
     it('cellStateComparison', () => {

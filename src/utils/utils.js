@@ -26,14 +26,6 @@ export const range = (start, end) => {
 }
 
 /**
- * Store a function that does nothing. Useful when is mandatory to have a function
- * but you want that function to do nothing in the particular case.
- *
- * @returns {void}
- */
-export const nullFunction = () => {}
-
-/**
  * Compare a position state like editing or reverting with an i and j positions given.
  *
  * @param {object} state It should be an object with the i and j positions.

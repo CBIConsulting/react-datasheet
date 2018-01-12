@@ -131,7 +131,7 @@ table.data-grid.nowrap th.cell.clip {
 }
 
 .data-grid-wrapper table.dtg-virtual-header.scrolling-down thead tr:last-child {
-  box-shadow: 0px 1px 4px 2px #ddd;
+  box-shadow: 0px 1px 6px 1px #eaeaea;
 }
 
 .data-grid-wrapper table.data-grid {
@@ -154,4 +154,9 @@ table.data-grid.nowrap th.cell.clip {
   position: relative;
   z-index: 3;
   background: #fff;
+}
+
+.data-grid-wrapper table.data-grid thead tr th.fixed-column.last
+.data-grid-wrapper table.data-grid tbody tr td.fixed-column.last {
+  border-right-width: 2px;
 }
