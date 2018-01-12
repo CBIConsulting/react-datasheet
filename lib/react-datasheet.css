@@ -130,7 +130,8 @@ table.data-grid.nowrap th.cell.clip {
   z-index: 1;
 }
 
-.data-grid-wrapper table.dtg-virtual-header.scrolling-down thead tr:last-child {
+.data-grid-wrapper table.dtg-virtual-header.scrolling thead tr:last-child,
+.data-grid-wrapper table.data-grid tbody tr td.fixed-column.last.scrolling {
   box-shadow: 0px 1px 6px 1px #eaeaea;
 }
 
@@ -156,7 +157,7 @@ table.data-grid.nowrap th.cell.clip {
   background: #fff;
 }
 
-.data-grid-wrapper table.data-grid thead tr th.fixed-column.last
-.data-grid-wrapper table.data-grid tbody tr td.fixed-column.last {
+.data-grid-wrapper table.data-grid thead tr th.fixed-column.last.scrolling,
+.data-grid-wrapper table.data-grid tbody tr td.fixed-column.last.scrolling {
   border-right-width: 2px;
 }

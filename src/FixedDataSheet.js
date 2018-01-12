@@ -31,6 +31,7 @@ export default class FixedDataSheet extends PureComponent {
     this.handleTableScroll = this.handleTableScroll.bind(this)
     this.pageClick = this.pageClick.bind(this)
     this.onChange = this.onChange.bind(this)
+    this.lastFixedColumn = this.getLastFixedColumn(props.headerData);
 
     this.defaultState = {
       start: {},
@@ -64,12 +65,23 @@ export default class FixedDataSheet extends PureComponent {
     }
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.lastFixedColumn = this.getLastFixedColumn(nextProps.headerData);
+  }
+
   removeAllListeners () {
     document.removeEventListener('keydown', this.handleKey)
     document.removeEventListener('mousedown', this.pageClick)
     document.removeEventListener('mouseup', this.onMouseUp)
     document.removeEventListener('copy', this.handleCopy)
     document.removeEventListener('paste', this.handlePaste)
+  }
+
+  getLastFixedColumn(headerData) {
+    const lastI = headerData.length - 1;
+
+    return headerData && headerData[lastI] &&
+      headerData[lastI].reduce((prev, cell, i) => cell.fixed ? i : prev, null)
   }
 
   pageClick (e) {
@@ -187,10 +199,16 @@ export default class FixedDataSheet extends PureComponent {
       return (
         <tr key={keyFn ? keyFn(key) : key}>
           {
-            row.map((cell, j) => (
-              <HeaderCell
+            row.map((cell, j) => {
+              const isLastFixed = cell.fixed && this.lastFixedColumn === j
+              const className = [
+                cell.className, isLastFixed && 'last',
+                isLastFixed && scrollLeft && 'scrolling'
+              ].filter(cn => cn).join(' ')
+
+              return <HeaderCell
                 key={cell.key ? cell.key : j}
-                className={cell.className ? cell.className : ''}
+                className={className}
                 row={i}
                 col={j}
                 colSpan={cell.colSpan}
@@ -203,7 +221,7 @@ export default class FixedDataSheet extends PureComponent {
                 fixed={cell.fixed}
                 left={cell.fixed ? this.parseStyleSize(scrollLeft) : null}
               />
-            ))
+            })
           }
         </tr>
       )
@@ -231,9 +249,15 @@ export default class FixedDataSheet extends PureComponent {
       <tr key={keyFn ? keyFn(i) : i}>
         {
           row.map((cell, j) => {
+            const isLastFixed = cell.fixed && this.lastFixedColumn === j
+            const className = [
+              cell.className, isLastFixed && 'last',
+              isLastFixed && scrollLeft && 'scrolling'
+            ].filter(cn => cn).join(' ')
+
             const props = {
               key: cell.key ? cell.key : j,
-              className: cell.className ? cell.className : '',
+              className: className,
               row: i,
               col: j,
               selected: isCellSelected(start, end, i, j),
@@ -296,7 +320,7 @@ export default class FixedDataSheet extends PureComponent {
     const { scrollTop } = this.state
     const fullCN = [
       'data-grid', className, overflow,
-      scrollTop && 'scrolling-down'
+      scrollTop && 'scrolling'
     ].filter(c => c).join(' ')
     const style = {
       width: this.parseStyleSize(width),
