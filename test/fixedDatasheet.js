@@ -312,17 +312,29 @@ describe('FixedDatasheet', () => {
           const headerCells = customWrapper.find('table.dtg-virtual-header th');
           const bodyCells = customWrapper.find('td');
 
-          expect(mainTable.node.classList.contains('scrolling-down')).toBe(true);
-          expect(header.node.classList.contains('scrolling-down')).toBe(true);
+          expect(mainTable.node.classList.contains('scrolling')).toBe(true);
+          expect(header.node.classList.contains('scrolling')).toBe(true);
           expect(header.node.style.top).toEqual('30px')
           expect(headerCells.at(0).node.style.left).toEqual('10px')
           expect(headerCells.at(1).node.style.left).toEqual('')
           expect(bodyCells.at(0).node.style.left).toEqual('10px')
           expect(bodyCells.at(1).node.style.left).toEqual('')
+
+          // Classnames header
           expect(headerCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(headerCells.at(0).node.classList.contains('last')).toBe(true)
+          expect(headerCells.at(0).node.classList.contains('scrolling')).toBe(true)
           expect(headerCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          expect(headerCells.at(1).node.classList.contains('last')).toBe(false)
+          expect(headerCells.at(1).node.classList.contains('scrolling')).toBe(false)
+
+          // Classnames body
           expect(bodyCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(bodyCells.at(0).node.classList.contains('last')).toBe(true)
+          expect(bodyCells.at(0).node.classList.contains('scrolling')).toBe(true)
           expect(bodyCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          expect(bodyCells.at(1).node.classList.contains('last')).toBe(false)
+          expect(bodyCells.at(1).node.classList.contains('scrolling')).toBe(false)
           done()
         })
       })

@@ -31,7 +31,7 @@ export default class FixedDataSheet extends PureComponent {
     this.handleTableScroll = this.handleTableScroll.bind(this)
     this.pageClick = this.pageClick.bind(this)
     this.onChange = this.onChange.bind(this)
-    this.lastFixedColumn = this.getLastFixedColumn(props.headerData);
+    this.lastFixedColumn = this.getLastFixedColumn(props.headerData)
 
     this.defaultState = {
       start: {},
@@ -65,8 +65,8 @@ export default class FixedDataSheet extends PureComponent {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.lastFixedColumn = this.getLastFixedColumn(nextProps.headerData);
+  componentWillReceiveProps (nextProps) {
+    this.lastFixedColumn = this.getLastFixedColumn(nextProps.headerData)
   }
 
   removeAllListeners () {
@@ -77,8 +77,8 @@ export default class FixedDataSheet extends PureComponent {
     document.removeEventListener('paste', this.handlePaste)
   }
 
-  getLastFixedColumn(headerData) {
-    const lastI = headerData.length - 1;
+  getLastFixedColumn (headerData) {
+    const lastI = headerData.length - 1
 
     return headerData && headerData[lastI] &&
       headerData[lastI].reduce((prev, cell, i) => cell.fixed ? i : prev, null)
