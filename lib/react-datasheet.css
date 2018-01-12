@@ -149,6 +149,7 @@ table.data-grid.nowrap th.cell.clip {
   height: inherit;
   width: 100%;
   padding: 0 5px;
+  box-sizing: border-box;
 }
 
 .data-grid-wrapper table.data-grid td.cell.selected,

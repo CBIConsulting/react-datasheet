@@ -158,12 +158,3 @@ pre {
   text-align: center;
   font-size: 12px;
 }
-
-.sheet-container.fixed * {
-  box-sizing: border-box;
-}
-
-.sheet-container.fixed *:before,
-.sheet-container.fixed *:after, {
-  box-sizing: border-box;
-}
