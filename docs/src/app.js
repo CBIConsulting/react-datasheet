@@ -51,6 +51,7 @@ export default class App extends React.Component {
           </div>
           <div className={'divider'} />
           <h3 style={{color: '#e63946'}}>Basic fixed datasheet</h3>
+          <a name="fixed-datasheet"></a>
           <small>
             Basic data sheet with fixed header and columns
           </small>
