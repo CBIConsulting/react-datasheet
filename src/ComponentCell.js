@@ -22,17 +22,19 @@ export default class ComponentCell extends PureComponent {
 
   render () {
     let {
-      row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow, value, className, editing, selected,
-      onMouseDown, onMouseOver, onDoubleClick, onContextMenu, attributes
+      row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
+      value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick,
+      onContextMenu, attributes, component, fixed, left
     } = this.props
-    const style = { width }
+    const style = { width, left }
 
     return (
       <td
         className={[
           className, 'cell', overflow,
           editing && 'editing', selected && 'selected',
-          this.state.updated && 'updated'
+          this.state.updated && 'updated',
+          fixed && 'fixed-column'
         ].filter(a => a).join(' ')}
         onMouseDown={() => onMouseDown(row, col)}
         onDoubleClick={() => onDoubleClick(row, col)}
@@ -42,7 +44,7 @@ export default class ComponentCell extends PureComponent {
         style={style}
         {...attributes}
       >
-        { ((editing && !readOnly) || forceComponent) ? this.props.component : value }
+        { ((editing && !readOnly) || forceComponent) ? component : value }
       </td>
     )
   }
@@ -64,5 +66,7 @@ ComponentCell.propTypes = {
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
   forceComponent: PropTypes.bool,
-  attributes: PropTypes.object
+  attributes: PropTypes.object,
+  fixed: PropTypes.bool,
+  left: PropTypes.string
 }

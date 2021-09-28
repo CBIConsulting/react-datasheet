@@ -7,302 +7,23 @@ import {
 } from 'enzyme'
 import sinon from 'sinon'
 import expect from 'expect'
-import _ from 'lodash'
-import DataSheet from '../src/DataSheet'
-import ComponentCell from '../src/ComponentCell'
-import DataCell from '../src/DataCell'
-import jsdom from 'mocha-jsdom'
+import _ from 'lodash';
+import FixedDataSheet from '../src/FixedDataSheet';
+import DataCell from '../src/DataCell';
+import HeaderCell from '../src/DataCell';
+import jsdom from 'mocha-jsdom';
 
-const TAB_KEY = 9
-const ENTER_KEY = 13
-const ESCAPE_KEY = 27
-const RIGHT_KEY = 39
-const LEFT_KEY = 37
-const UP_KEY = 38
-const DOWN_KEY = 40
-const DELETE_KEY = 46
+import {
+  TAB_KEY, ESCAPE_KEY, LEFT_KEY,
+  UP_KEY, RIGHT_KEY, DOWN_KEY,
+  DELETE_KEY, BACKSPACE_KEY,
+  ENTER_KEY
+} from '../src/utils/constanct';
 
-const dispatchKeyDownEvent = (key, shift = false) => {
-  const e = document.createEvent('KeyboardEvent')
-  Object.defineProperty(e, 'keyCode', {
-    get: () => key
-  })
-  Object.defineProperty(e, 'shiftKey', {
-    get: () => shift
-  })
-  e.initEvent('keydown', true, true)
-  document.dispatchEvent(e)
-}
+import {dispatchKeyDownEvent, triggerMouseEvent} from './testUtils';
 
-const triggerMouseEvent = (node, eventType) => {
-  const clickEvent = document.createEvent('MouseEvents')
-  clickEvent.initEvent(eventType, true, true)
-  node.dispatchEvent(clickEvent)
-}
-
-describe('Component', () => {
-  describe('DataCell component', () => {
-    describe('rendering', () => {
-      it('should properly render', () => {
-        const onMouseDown = sinon.spy()
-        const onMouseOver = sinon.spy()
-        const onDoubleClick = sinon.spy()
-        const onContextMenu = sinon.spy()
-        const wrapper = shallow(
-          <DataCell
-            row={2}
-            col={3}
-            rowSpan={4}
-            colSpan={5}
-            value={5}
-            width={'200px'}
-            className={'test'}
-            editing={false}
-            selected={false}
-            onMouseDown={onMouseDown}
-            onDoubleClick={onDoubleClick}
-            onMouseOver={onMouseOver}
-            onContextMenu={onContextMenu}
-          />
-        )
-
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='test cell' colSpan={5} rowSpan={4} style={{ width: '200px' }}>
-            <span style={{display: 'block'}}>5</span>
-            <input style={{display: 'none'}} />
-          </td>).html())
-
-        wrapper.simulate('mousedown')
-        wrapper.simulate('doubleclick')
-        wrapper.simulate('mouseover')
-        wrapper.simulate('contextmenu')
-
-        expect(onDoubleClick.calledWith(2, 3)).toEqual(true)
-        expect(onMouseDown.calledWith(2, 3)).toEqual(true)
-        expect(onMouseOver.calledWith(2, 3)).toEqual(true)
-        const args = onContextMenu.getCall(0).args
-        expect(args[1]).toEqual(2)
-        expect(args[2]).toEqual(3)
-        wrapper.unmount()
-      })
-
-      it('should properly all update functions and render reading mode to editing mode ', () => {
-        const props = {
-          editing: false,
-          selected: false,
-          value: 5,
-          data: 5,
-          row: 1,
-          col: 1,
-          onMouseDown: () => {},
-          onMouseOver: () => {},
-          onDoubleClick: () => {},
-          onContextMenu: () => {}
-        }
-        const wrapper = shallow(
-          <DataCell
-            {...props}
-          />
-        )
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='cell' colSpan={1} rowSpan={1}>
-            <span style={{display: 'block'}}>5</span>
-            <input style={{display: 'none'}} />
-          </td>).html())
-
-        wrapper.setProps({ editing: true, selected: true })
-
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='cell selected editing' colSpan={1} rowSpan={1}>
-            <span style={{display: 'none'}}>5</span>
-            <input style={{display: 'block'}} />
-          </td>).html())
-      })
-
-      it('should properly render a flash when value changes', () => {
-        const props = {
-          editing: false,
-          selected: false,
-          value: 5,
-          data: 5,
-          row: 1,
-          col: 1,
-          onMouseDown: () => {},
-          onMouseOver: () => {},
-          onDoubleClick: () => {},
-          onContextMenu: () => {}
-        }
-        const wrapper = shallow(
-          <DataCell
-            {...props}
-          />
-        )
-        wrapper.setProps({ value: 6 })
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='cell updated' colSpan={1} rowSpan={1}>
-            <span style={{display: 'block'}}>6</span>
-            <input style={{display: 'none'}} />
-          </td>).html())
-      })
-    })
-
-    describe('editing', () => {
-      let onChange = null
-      let props = null
-      let wrapper = null
-      jsdom()
-      beforeEach(() => {
-        wrapper && wrapper.detach()
-        props = {
-          editing: false,
-          reverting: false,
-          selected: false,
-          value: '2',
-          data: '5',
-          row: 1,
-          col: 2,
-          onChange: sinon.spy(),
-          onMouseDown: () => {},
-          onDoubleClick: () => {},
-          onMouseOver: () => {},
-          onContextMenu: () => {}
-        }
-        document.body.innerHTML = '<table><tbody><tr id="root"></tr></tbody></table>'
-        wrapper = mount(<DataCell {...props} />, {attachTo: document.getElementById('root')})
-      })
-
-      it('should not call onChange if value is the same', () => {
-        wrapper.setProps({ editing: true, selected: true })
-        expect(wrapper.find('input').node.value).toEqual('5')
-        wrapper.find('input').node.value = '5'
-        wrapper.find('input').simulate('change')
-        wrapper.setProps({ editing: false, selected: true })
-        expect(props.onChange.called).toEqual(false)
-      })
-
-      it('should properly call onChange', () => {
-        wrapper.setProps({ editing: true, selected: true })
-        wrapper.find('input').node.value = '6'
-        wrapper.find('input').simulate('change')
-        wrapper.setProps({ editing: false, selected: true })
-        expect(props.onChange.called).toEqual(true)
-        expect(props.onChange.calledWith(props.row, props.col, '6')).toEqual(true)
-      })
-
-      it('input value should be cleared if we go into editing with clear call', () => {
-        wrapper.setProps({ editing: true, selected: true, clear: true})
-        expect(wrapper.find('input').node.value).toEqual('')
-      })
-      it('input value should be set to value if data is null', () => {
-        wrapper.setProps({ data: null})
-        wrapper.setProps({ editing: true, selected: true})
-        expect(wrapper.find('input').node.value).toEqual('2')
-
-        wrapper.find('input').node.value = '2'
-        wrapper.find('input').simulate('change')
-        wrapper.setProps({ editing: false, selected: true })
-        expect(props.onChange.called).toEqual(false)
-      })
-    })
-  })
-
-  describe('ComponentCell component', () => {
-    describe('rendering', () => {
-      it('should properly render', () => {
-        const onMouseDown = sinon.spy()
-        const onMouseOver = sinon.spy()
-        const onDoubleClick = sinon.spy()
-        const onContextMenu = sinon.spy()
-        const wrapper = shallow(
-          <ComponentCell
-            row={2}
-            col={3}
-            readOnly={false}
-            forceComponent
-            rowSpan={4}
-            colSpan={5}
-            value={5}
-            width={'200px'}
-            className={'test'}
-            editing={false}
-            selected={false}
-            component={<div>HELLO</div>}
-            onMouseDown={onMouseDown}
-            onDoubleClick={onDoubleClick}
-            onMouseOver={onMouseOver}
-            onContextMenu={onContextMenu}
-          />
-        )
-
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='test cell' colSpan={5} rowSpan={4} style={{width: '200px'}}>
-            <div>HELLO</div>
-          </td>).html())
-        wrapper.setProps({forceComponent: false})
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='test cell' colSpan={5} rowSpan={4} style={{width: '200px'}}>
-            5
-          </td>).html())
-        wrapper.setProps({value: 7})
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='test cell updated' colSpan={5} rowSpan={4} style={{width: '200px'}}>
-            7
-          </td>).html())
-        wrapper.simulate('mousedown')
-        wrapper.simulate('doubleclick')
-        wrapper.simulate('mouseover')
-        wrapper.simulate('contextmenu')
-
-        expect(onDoubleClick.calledWith(2, 3)).toEqual(true)
-        expect(onMouseDown.calledWith(2, 3)).toEqual(true)
-        expect(onMouseOver.calledWith(2, 3)).toEqual(true)
-        const args = onContextMenu.getCall(0).args
-        expect(args[1]).toEqual(2)
-        expect(args[2]).toEqual(3)
-        wrapper.unmount()
-      })
-    })
-    describe('rendering', () => {
-      it('should properly render a change (flashing)', (done) => {
-        const wrapper = shallow(
-          <ComponentCell
-            row={2}
-            col={3}
-            readOnly={false}
-            forceComponent
-            value={5}
-            className={'test'}
-            editing={false}
-            selected={false}
-            component={<div>HELLO</div>}
-            onMouseDown={() => {}}
-            onDoubleClick={() => {}}
-            onMouseOver={() => {}}
-            onContextMenu={() => {}}
-          />
-        )
-        wrapper.setProps({value: 7})
-        expect(wrapper.html()).toEqual(
-          shallow(<td className='test cell updated' colSpan={1} rowSpan={1}>
-            <div>HELLO</div>
-          </td>).html())
-
-        setTimeout(() => {
-          try {
-            expect(wrapper.html()).toEqual(
-              shallow(<td className='test cell' colSpan={1} rowSpan={1}>
-                <div>HELLO</div>
-              </td>).html())
-            done()
-          } catch (e) {
-            done(e)
-          }
-        }, 750)
-      })
-    })
-  })
-
-  describe('Shallow DataSheet component', () => {
+describe('FixedDatasheet', () => {
+  describe('Shallow component', () => {
     describe('event listeners', () => {
       const savedDoc = global.doc
       after(() => {
@@ -313,20 +34,25 @@ describe('Component', () => {
         const removeEvent = sinon.spy()
         global.document = { addEventListener: addEvent, removeEventListener: removeEvent}
 
-        const component = shallow(<DataSheet
-          keyFn={(i) => 'custom_key_' + i}
-          className={'test'}
-          data={[[{data: 1}]]}
-          valueRenderer={(cell) => cell.data}
-        />)
+        const component = shallow(
+          <FixedDataSheet
+            keyFn={(i) => 'custom_key_' + i}
+            className={'test'}
+            data={[[{data: 1}]]}
+            headerData={[[{data: 'header 1'}]]}
+            valueRenderer={(cell) => cell.data}
+            onChange={() => {}}
+          />
+        )
         component.unmount()
         expect(removeEvent.callCount).toEqual(5)
       })
     })
   })
 
-  describe('DataSheet component', () => {
+  describe('Component', () => {
     let data = []
+    let headerData = []
     let component = null
     let wrapper = null
     let customWrapper = null
@@ -353,11 +79,21 @@ describe('Component', () => {
           width: 100
         }]
       ]
-      component = <DataSheet
+      headerData = [
+        [{
+          data: 'Header 1',
+          className: 'header-1'
+        }, {
+          data: 'Header 2',
+          className: 'header-2'
+        }]
+      ]
+      component = <FixedDataSheet
         keyFn={(i) => 'custom_key_' + i}
         className={'test'}
         overflow='nowrap'
         data={data}
+        headerData={headerData}
         valueRenderer={(cell) => cell.data}
         onChange={(cell, i, j, value) => data[i][j].data = value}
       />
@@ -372,16 +108,34 @@ describe('Component', () => {
     })
     describe('rendering with varying props', () => {
       it('renders the proper elements', () => {
-        expect(wrapper.find('table').length).toEqual(1)
-        expect(_.values(wrapper.find('table').node.classList)).toEqual(['data-grid', 'test', 'nowrap'])
+        expect(wrapper.find('table').length).toEqual(2)
 
+        // Evaluate tables render with proper classNames
+        const tables =  wrapper.find('table').nodes;
+        expect(_.values(tables[0].classList)).toEqual(['dtg-virtual-header', 'data-grid', 'test', 'nowrap'])
+        expect(_.values(tables[1].classList)).toEqual(['dtg-main', 'data-grid', 'test', 'nowrap'])
+
+        // Evaluate table headers
+        const virtualHeaderCells = wrapper.find('table.dtg-virtual-header th > span').nodes.map(n => n.innerHTML)
+        const mainHeaderCells = wrapper.find('table.dtg-main th > span').nodes.map(n => n.innerHTML)
+        const headerContent = ['Header 1', 'Header 2'];
+        expect(wrapper.find('th > span').length).toEqual(4)
+        expect(virtualHeaderCells).toEqual(headerContent)
+        expect(mainHeaderCells).toEqual(headerContent)
+
+        // Evaluate table body content
         expect(wrapper.find('td > span').length).toEqual(4)
         expect(wrapper.find('td > span').nodes.map(n => n.innerHTML)).toEqual(['4', '2', '3', '5'])
       })
 
       it('renders the proper keys', () => {
-        expect(wrapper.find('table tr').at(0).key()).toEqual('custom_key_0')
-        expect(wrapper.find('table tr').at(1).key()).toEqual('custom_key_1')
+        // Evaluate header row keys
+        expect(wrapper.find('table thead tr').at(0).key()).toEqual('custom_key_header_0')
+        expect(wrapper.find(HeaderCell).at(1).key()).toEqual('custom_key')
+
+        // Evaluate body row keys
+        expect(wrapper.find('table tbody tr').at(0).key()).toEqual('custom_key_0')
+        expect(wrapper.find('table tbody tr').at(1).key()).toEqual('custom_key_1')
         expect(wrapper.find(DataCell).at(1).key()).toEqual('custom_key')
       })
 
@@ -395,63 +149,80 @@ describe('Component', () => {
           ])
       })
       it('renders the data in the input properly if dataRenderer is set', () => {
-        customWrapper = mount(<DataSheet
-          data={data}
-          dataRenderer={(cell) => '=+' + cell.data}
-          valueRenderer={(cell) => cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            data={data}
+            headerData={headerData}
+            dataRenderer={(cell) => '=+' + cell.data}
+            valueRenderer={(cell) => cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         customWrapper.find('td').first().simulate('doubleClick')
         expect(customWrapper.find('td.cell input').nodes[0].value).toEqual('=+4')
       })
 
       it('renders proper elements by column', () => {
         const withDates = data.map((row, index) => [{data: new Date('2017-0' + (index + 1) + '-01')}, ...row])
-        customWrapper = mount(<DataSheet
-          data={withDates}
-          valueRenderer={(cell, i, j) => j === 0 ? cell.data.toGMTString() : cell.data}
-          dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={withDates}
+            valueRenderer={(cell, i, j, isHeader) => j === 0 && !isHeader ? cell.data.toGMTString() : cell.data}
+            dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         // expect(wrapper.find('td > span').length).toEqual(6);
         expect(customWrapper.find('td > span').nodes.map(n => n.innerHTML)).toEqual(['Sun, 01 Jan 2017 00:00:00 GMT', '4', '2', 'Wed, 01 Feb 2017 00:00:00 GMT', '3', '5'])
       })
 
       it('renders data in the input properly if dataRenderer is set by column', () => {
         const withDates = data.map((row, index) => [{data: new Date('2017-0' + (index + 1) + '-01')}, ...row])
-        customWrapper = mount(<DataSheet
-          data={withDates}
-          valueRenderer={(cell, i, j) => j === 0 ? cell.data.toGMTString() : cell.data}
-          dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={withDates}
+            valueRenderer={(cell, i, j, isHeader) => j === 0 && !isHeader ? cell.data.toGMTString() : cell.data}
+            dataRenderer={(cell, i, j) => j === 0 ? cell.data.toISOString() : cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
         customWrapper.find('td').first().simulate('doubleClick')
         expect(customWrapper.find('td.cell input').nodes[0].value).toEqual('2017-01-01T00:00:00.000Z')
       })
 
       it('renders the attributes to the cell if the attributesRenderer is set', () => {
-        customWrapper = mount(<DataSheet
-          data={data}
-          valueRenderer={(cell, i, j) => cell.data}
-          dataRenderer={(cell, i, j) => cell.data}
-          attributesRenderer={(cell, i, j) => {
-            if (i === 0 && j === 0) {
-              return {'data-hint': 'Not valid'}
-            } else if (i === 1 && j === 1) {
-              return {'data-hint': 'Valid'}
-            }
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={headerData}
+            data={data}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
+            dataRenderer={(cell, i, j) => cell.data}
+            attributesRenderer={(cell, i, j, isHeader) => {
+              if (!isHeader) {
+                if (i === 0 && j === 0) {
+                  return {'data-hint': 'Not valid'}
+                }
+                
+                if (i === 1 && j === 1) {
+                  return {'data-hint': 'Valid'}
+                }
+              }
 
-            return null
-          }}
-          onChange={(cell, i, j, value) => data[i][j].data = value}
-        />)
+              return null
+            }}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
 
         expect(customWrapper.find('td.cell').first().props()['data-hint']).toEqual('Not valid')
         expect(customWrapper.find('td.cell').last().props()['data-hint']).toEqual('Valid')
       })
 
       it('renders a component properly', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{data: 'Header'}]]}
           data={[[{component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -462,7 +233,8 @@ describe('Component', () => {
       })
 
       it('forces a component rendering', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{data: 'Header'}]]}
           data={[[{forceComponent: true, component: <div className={'custom-component'}>COMPONENT RENDERED</div>}]]}
           valueRenderer={(cell) => 'VALUE RENDERED'}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -476,7 +248,8 @@ describe('Component', () => {
       })
 
       it('renders a cell with readOnly field properly', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{data: 'Header'}, {data: 'Header 2'}]]}
           data={[[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]}
           valueRenderer={(cell) => cell.data}
           dataRenderer={(cell) => '=+' + cell.data}
@@ -497,7 +270,8 @@ describe('Component', () => {
       })
 
       it('renders a cell with disabled events', () => {
-        customWrapper = mount(<DataSheet
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{value: 'Header'}, {value: 'Header 2'}]]}
           data={[[{data: 12, disableEvents: true}, {data: 24, disableEvents: true}]]}
           valueRenderer={(cell) => cell.data}
           onChange={(cell, i, j, value) => data[i][j].data = value}
@@ -511,7 +285,81 @@ describe('Component', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
+        })
+      })
+
+      it('render fixed columns and header on scroll', (done) => {
+        customWrapper = mount(
+          <FixedDataSheet
+            headerData={[[{data: 'Header', fixed: true}, {data: 'Header 2'}]]}
+            width={'10px'}
+            height={'10px'}
+            data={[[{data: 12, fixed: true}, {data: 24}]]}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
+            onChange={(cell, i, j, value) => data[i][j].data = value}
+          />
+        )
+
+        customWrapper.setState({
+          scrollTop: 30,
+          scrollLeft: 10
+        }, () => {
+          const mainTable = customWrapper.find('table.dtg-main');
+          const header = customWrapper.find('table.dtg-virtual-header');
+          const headerCells = customWrapper.find('table.dtg-virtual-header th');
+          const bodyCells = customWrapper.find('td');
+
+          expect(mainTable.node.classList.contains('scrolling')).toBe(true);
+          expect(header.node.classList.contains('scrolling')).toBe(true);
+          expect(header.node.style.top).toEqual('30px')
+          expect(headerCells.at(0).node.style.left).toEqual('10px')
+          expect(headerCells.at(1).node.style.left).toEqual('')
+          expect(bodyCells.at(0).node.style.left).toEqual('10px')
+          expect(bodyCells.at(1).node.style.left).toEqual('')
+
+          // Classnames header
+          expect(headerCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(headerCells.at(0).node.classList.contains('last')).toBe(true)
+          expect(headerCells.at(0).node.classList.contains('scrolling')).toBe(true)
+          expect(headerCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          expect(headerCells.at(1).node.classList.contains('last')).toBe(false)
+          expect(headerCells.at(1).node.classList.contains('scrolling')).toBe(false)
+
+          // Classnames body
+          expect(bodyCells.at(0).node.classList.contains('fixed-column')).toBe(true)
+          expect(bodyCells.at(0).node.classList.contains('last')).toBe(true)
+          expect(bodyCells.at(0).node.classList.contains('scrolling')).toBe(true)
+          expect(bodyCells.at(1).node.classList.contains('fixed-column')).toBe(false)
+          expect(bodyCells.at(1).node.classList.contains('last')).toBe(false)
+          expect(bodyCells.at(1).node.classList.contains('scrolling')).toBe(false)
+          done()
+        })
+      })
+    })
+
+    describe('selection', () => {
+      it('', () => {
+        customWrapper = mount(<FixedDataSheet
+          headerData={[[{data: 'Header'}, {data: 'Header 2'}]]}
+          data={[[{data: 12, disableEvents: true}, {data: 24, disableEvents: true}]]}
+          valueRenderer={(cell) => cell.data}
+          onChange={(cell, i, j, value) => data[i][j].data = value}
+        />)
+        customWrapper.find('td').at(0).simulate('mouseDown')
+        customWrapper.find('td').at(0).simulate('doubleClick')
+        expect(customWrapper.state()).toEqual({
+          start: {},
+          end: {},
+          selecting: false,
+          editing: {},
+          reverting: {},
+          forceEdit: false,
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
     })
@@ -561,7 +409,8 @@ describe('Component', () => {
 
       it('calls onSelect prop when a new element is selected', (done) => {
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={headerData}
             data={data}
             onSelect={(cell) => {
               try {
@@ -758,7 +607,9 @@ describe('Component', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: true,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
 
         cells.at(0).find('input').node.value = 213
@@ -780,7 +631,9 @@ describe('Component', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
         wrapper.find('td.cell.selected input').node.value = 213
         wrapper.find('td.cell.selected input').simulate('change')
@@ -795,7 +648,9 @@ describe('Component', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -813,7 +668,9 @@ describe('Component', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
         dispatchKeyDownEvent(RIGHT_KEY)
         expect(wrapper.state()).toEqual({
@@ -823,7 +680,9 @@ describe('Component', () => {
           editing: { i: 0, j: 0 },
           reverting: {},
           forceEdit: false,
-          clear: { i: 0, j: 0 }
+          clear: { i: 0, j: 0 },
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -845,9 +704,10 @@ describe('Component', () => {
         evt.initEvent('copy', false, true)
         evt.clipboardData = { setData: (type, text) => copied = text}
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={headerData}
             data={data}
-            valueRenderer={(cell, i, j) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => cell.data}
             dataRenderer={(cell, i, j) => `{${i},${j}}${cell.data}`}
             onChange={(cell, i, j, value) => data[i][j].data = value}
           />
@@ -895,9 +755,10 @@ describe('Component', () => {
       it('pastes data properly on a different cell', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -914,9 +775,10 @@ describe('Component', () => {
       it('pastes multiple rows correclty on windows', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}], [{data: 1012, readOnly: true}, {data: 1024, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -933,9 +795,10 @@ describe('Component', () => {
       it('doesnt auto paste data if cell is editing', () => {
         const datacust = [[{data: 12, readOnly: false}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
           />
         )
@@ -951,7 +814,8 @@ describe('Component', () => {
       it('pastes data properly and fires onPaste function if defined', (done) => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{data: 'Header 1'}, {data: 'Header 2'}]]}
             data={datacust}
             valueRenderer={(cell) => cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
@@ -984,7 +848,8 @@ describe('Component', () => {
       it('pastes data properly, using parsePaste if defined', () => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}], [{data: 1012, readOnly: true}, {data: 1024, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{data: 'Header 1'}, {data: 'Header 2'}]]}
             data={datacust}
             valueRenderer={(cell) => cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
@@ -1017,7 +882,9 @@ describe('Component', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
 
@@ -1038,7 +905,9 @@ describe('Component', () => {
           editing: {},
           reverting: {},
           forceEdit: false,
-          clear: {}
+          clear: {},
+          scrollLeft: 0,
+          scrollTop: 0
         })
       })
       it('delete on DELETE_KEY', () => {
@@ -1065,9 +934,10 @@ describe('Component', () => {
       it('starts calls contextmenu with right object', (done) => {
         const datacust = [[{data: 12, readOnly: true}, {data: 24, readOnly: false}]]
         customWrapper = mount(
-          <DataSheet
+          <FixedDataSheet
+            headerData={[[{value: 'Header 1'}, {value: 'Header 2'}]]}
             data={datacust}
-            valueRenderer={(cell) => cell.data}
+            valueRenderer={(cell, i, j, isHeader) => isHeader ? cell.value : cell.data}
             onChange={(cell, i, j, value) => datacust[i][j].data = value}
             onContextMenu={(e, cell, i, j) => {
               try {

@@ -18,6 +18,7 @@ export default class DataCell extends PureComponent {
     if (prevProps.editing === true && this.props.editing === false && this.props.reverting === false) {
       this.onChange(this._input.value)
     }
+
     if (prevProps.editing === false && this.props.editing === true) {
       if (this.props.clear) {
         this._input.value = ''
@@ -41,9 +42,9 @@ export default class DataCell extends PureComponent {
     const {
       row, col, rowSpan, readOnly, colSpan, width, overflow, value, className,
       editing, selected, onMouseDown, onMouseOver, onDoubleClick, onContextMenu,
-      attributes
+      attributes, fixed, left
     } = this.props
-    const style = { width }
+    const style = { width, left }
 
     return (
       <td
@@ -53,12 +54,13 @@ export default class DataCell extends PureComponent {
           selected && 'selected',
           editing && 'editing',
           readOnly && 'read-only',
-          this.state.updated && 'updated'
+          this.state.updated && 'updated',
+          fixed && 'fixed-column'
         ].filter(a => a).join(' ')}
         onMouseDown={() => onMouseDown(row, col)}
         onDoubleClick={() => onDoubleClick(row, col)}
         onMouseOver={() => onMouseOver(row, col)}
-        onContextMenu={(e) => onContextMenu(e, row, col)}
+        onContextMenu={e => onContextMenu(e, row, col)}
         colSpan={colSpan || 1}
         rowSpan={rowSpan || 1}
         style={style}
@@ -87,5 +89,7 @@ DataCell.propTypes = {
   onMouseOver: PropTypes.func.isRequired,
   onContextMenu: PropTypes.func.isRequired,
   updated: PropTypes.bool,
-  attributes: PropTypes.object
+  attributes: PropTypes.object,
+  fixed: PropTypes.bool,
+  left: PropTypes.string
 }

@@ -1,9 +1,7 @@
 import React from 'react'
-import Select from 'react-select'
-import _ from 'lodash'
 import 'react-select/dist/react-select.css'
 import  './lib/react-datasheet.css'
-import {BasicSheet, MathSheet, ComponentSheet} from './examples/index';
+import {BasicSheet, MathSheet, ComponentSheet, FixedDataSheet} from './examples/index';
 
 export default class App extends React.Component {
   render () {
@@ -13,16 +11,16 @@ export default class App extends React.Component {
           <h1>React datasheet</h1>
           <h4>Simple and highly customizable excel-like spreadsheet</h4>
           <pre>npm install react-datasheet --save</pre>
-          <a className={'github-link'} href="https://github.com/nadbm/react-datasheet"><span class="hidden-xs"> View on GitHub </span><span class="octicon octicon-mark-github" aria-hidden="true"></span></a>
+          <a className={'github-link'} href="https://github.com/nadbm/react-datasheet"><span className="hidden-xs"> View on GitHub </span><span className="octicon octicon-mark-github" aria-hidden="true"></span></a>
         </div>
         <div className={'container'} >
           <div style={{float: 'right', marginTop: '-20px'}}>
-            <a 
-              className="github-button" 
+            <a
+              className="github-button"
               href="https://github.com/nadbm/react-datasheet"
-              data-style="mega" data-count-href="/nadbm/react-datasheet/stargazers" 
-              data-count-api="/repos/nadbm/react-datasheet#stargazers_count" 
-              data-count-aria-label="# stargazers on GitHub" 
+              data-style="mega" data-count-href="/nadbm/react-datasheet/stargazers"
+              data-count-api="/repos/nadbm/react-datasheet#stargazers_count"
+              data-count-aria-label="# stargazers on GitHub"
               aria-label="Star nadbm/react-datasheet on GitHub">
               Star
             </a>
@@ -50,6 +48,15 @@ export default class App extends React.Component {
           <h3 style={{color: '#e63946'}}>Sheet with components</h3>
           <div className={'sheet-container'}>
             <ComponentSheet />
+          </div>
+          <div className={'divider'} />
+          <h3 style={{color: '#e63946'}}>Basic fixed datasheet</h3>
+          <a name="fixed-datasheet"></a>
+          <small>
+            Basic data sheet with fixed header and columns
+          </small>
+          <div className={'sheet-container fixed'}>
+            <FixedDataSheet />
           </div>
           <div className={'divider'} />
         </div>

@@ -2,7 +2,7 @@
   "name": "react-datasheet-example",
   "version": "0.1.0",
   "private": true,
-  "homepage": "http://nadbm.github.io/react-datasheet",
+  "homepage": "http://sediug.github.io/react-datasheet",
   "devDependencies": {
     "react-scripts": "^1.0.6"
   },
