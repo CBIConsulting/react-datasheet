@@ -20,17 +20,17 @@ export default class ComponentCell extends PureComponent {
     clearTimeout(this.timeout)
   }
 
-  renderComponent() {
-    const {component, editing} = this.props
-    const componentProps = {editing};
-    typeof component === "function" ? component(props) : component
+  renderComponent () {
+    const { component, editing } = this.props
+    const componentProps = { editing }
+    return typeof component === 'function' ? component(componentProps) : component
   }
 
   render () {
-    let {
+    const {
       row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
       value, className, editing, selected, onMouseDown, onMouseOver, onDoubleClick,
-      onContextMenu, attributes, component, fixed, left
+      onContextMenu, attributes, fixed, left
     } = this.props
     const style = { width, left }
 
@@ -50,7 +50,7 @@ export default class ComponentCell extends PureComponent {
         style={style}
         {...attributes}
       >
-        { ((editing && !readOnly) || forceComponent) ? this.renderComponent() : value }
+        {((editing && !readOnly) || forceComponent) ? this.renderComponent() : value}
       </td>
     )
   }
