@@ -20,6 +20,12 @@ export default class ComponentCell extends PureComponent {
     clearTimeout(this.timeout)
   }
 
+  renderComponent() {
+    const {component, editing} = this.props
+    const componentProps = {editing};
+    typeof component === "function" ? component(props) : component
+  }
+
   render () {
     let {
       row, col, readOnly, forceComponent, rowSpan, colSpan, width, overflow,
@@ -44,7 +50,7 @@ export default class ComponentCell extends PureComponent {
         style={style}
         {...attributes}
       >
-        { ((editing && !readOnly) || forceComponent) ? component : value }
+        { ((editing && !readOnly) || forceComponent) ? this.renderComponent() : value }
       </td>
     )
   }
